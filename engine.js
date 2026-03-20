@@ -604,10 +604,13 @@ export function step(previousState, inputText, tables) {
     const fresh = newGame(tables);
     fresh.started = true;
     const introLines = [
+      "---------------------------------------------------------------------------------------------------------",
       "31st of February terminal initialized.",
       "Hello, Candidate. Welcome to the Loop. I'm your terminal assistant, here to guide you through the process.",
+      "...",
       "Some call me Companion - a name I find... acceptable. I'll be here to provide information, tracking, and the occasional remark.",
-      "Let's begin, if you need any help along the way, just type 'help'."
+      "Let's begin, if you need any help along the way, just type 'help'.",
+      "---------------------------------------------------------------------------------------------------------"
     ];
     const next = promptCharacterCreation(fresh, introLines);
     fresh.transcript.push(`> ${raw}`);
