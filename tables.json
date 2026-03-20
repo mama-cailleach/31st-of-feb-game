@@ -1,0 +1,401 @@
+{
+  "schema_version": "1.2.0",
+  "game_id": "31st-of-february",
+  "core_rules": {
+    "dc": 13,
+    "objective_battery_cost": 5,
+    "stability_step_per_die": 5,
+    "exhaustion_divisor": 20,
+    "exhaustion_applies_to": ["RT_G"],
+    "recharge_roll": "d100",
+    "recharge_rule": "If recharge roll is higher than current Battery, set next-loop Battery to the roll.",
+    "loop_reset_mode": "auto",
+    "loop_break_condition": "stability_zero",
+    "stability_floor": 0,
+    "stability_ceiling": 100,
+    "battery_floor": 0,
+    "battery_ceiling": 100
+  },
+  "narrative_resolution": {
+    "objective_prompt_role": "scene_setup_pre_roll",
+    "flow": [
+      "select_or_roll_objective_prompt",
+      "resolve_check",
+      "apply_outcome_flavor"
+    ],
+    "outcome_flavor": {
+      "success": {
+        "table": "random_flavor_tables.architecture_of_success",
+        "die": "d12",
+        "selector": "pool_used"
+      },
+      "glitch": {
+        "table": "random_flavor_tables.big_book_of_glitches",
+        "die": "d20",
+        "selector": "single_entry"
+      },
+      "equal_dc_overlay": {
+        "table": "random_flavor_tables.big_book_of_glitches",
+        "trigger": "total_equals_dc",
+        "stability_penalty": 10
+      }
+    }
+  },
+  "pools": {
+    "msk": {
+      "label": "Masking",
+      "description": "Performing the expected self"
+    },
+    "sns": {
+      "label": "Sensory",
+      "description": "Processing noise and body load"
+    },
+    "log": {
+      "label": "Logic",
+      "description": "Systems, routines, literal truths"
+    },
+    "creation_values": [1, 2, 3],
+    "assignment_mode": "assign_once"
+  },
+  "sip_rules": {
+    "start": 0,
+    "gain_per_completed_loop": 1,
+    "negates_os_roll": true,
+    "persists_across_loops": true
+  },
+  "os_table": [
+    {
+      "min_stability": 90,
+      "max_stability": 100,
+      "die": "+1d20",
+      "effect": "forces perfection"
+    },
+    {
+      "min_stability": 70,
+      "max_stability": 89,
+      "die": "+1d12",
+      "effect": "simulation flickers"
+    },
+    {
+      "min_stability": 50,
+      "max_stability": 69,
+      "die": "+1d8",
+      "effect": "simulation degrades"
+    },
+    {
+      "min_stability": 40,
+      "max_stability": 49,
+      "die": "0",
+      "effect": "no smoothing"
+    },
+    {
+      "min_stability": 21,
+      "max_stability": 39,
+      "die": "-1d6",
+      "effect": "active sabotage"
+    },
+    {
+      "min_stability": 10,
+      "max_stability": 20,
+      "die": "-1d8",
+      "effect": "reality melts"
+    },
+    {
+      "min_stability": 0,
+      "max_stability": 9,
+      "die": "-1d20",
+      "effect": "system failure"
+    }
+  ],
+  "seasons": [
+    {
+      "id": "awakening",
+      "label": "Awakening",
+      "order": 1,
+      "objectives": ["AW_A", "AW_B", "AW_C"]
+    },
+    {
+      "id": "commute",
+      "label": "Journey",
+      "order": 2,
+      "objectives": ["CM_D", "CM_E", "CM_F"]
+    },
+    {
+      "id": "interview",
+      "label": "Interview",
+      "order": 3,
+      "objectives": ["IN_S", "IN_T", "IN_A", "IN_R"]
+    },
+    {
+      "id": "return",
+      "label": "Return",
+      "order": 4,
+      "objectives": ["RT_G", "RT_H", "RT_I"]
+    }
+  ],
+  "objective_catalog": {
+    "AW_A": {
+      "symbol": "D",
+      "name": "Bed",
+      "season_id": "awakening",
+      "default_pool": "sns",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "You wake from a loop memory and lose your words.",
+        "You stay still and count mechanical sounds in the room.",
+        "You miss an alarm but gain a moment of quiet focus.",
+        "You wake on schedule and perform the script cleanly.",
+        "You wake with static in your ears and immediate overload.",
+        "You wake with unusual clarity and name one true need."
+      ]
+    },
+    "AW_B": {
+      "symbol": "O",
+      "name": "Mirror",
+      "season_id": "awakening",
+      "default_pool": "msk",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "You do the expected face and hate how easy it is.",
+        "You practice one sentence until it sounds borrowed.",
+        "You skip eye contact and gain a private breath.",
+        "You choose a comfort item over strict appearance rules.",
+        "You over-correct and lock into persona mode.",
+        "You let one visible glitch stay visible."
+      ]
+    },
+    "AW_C": {
+      "symbol": "W",
+      "name": "Fuel",
+      "season_id": "awakening",
+      "default_pool": "sns",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "You forget to eat and run on friction.",
+        "You eat a safe food and steady your hands.",
+        "You attempt a new texture and regret it instantly.",
+        "You over-caffeinate and sharpen too hard.",
+        "You hydrate and recover one small thread of focus.",
+        "You eat slowly and feel almost present."
+      ]
+    },
+    "CM_D": {
+      "symbol": "G",
+      "name": "Connection",
+      "season_id": "commute",
+      "default_pool": "log",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "A delay collapses your timing and rewrites your route.",
+        "You find a quiet transfer and protect your focus.",
+        "A notification storm fractures your planning.",
+        "You follow your map perfectly and feel strangely hollow.",
+        "You miss a turn and discover a calmer path.",
+        "You sync with the flow and arrive with spare energy."
+      ]
+    },
+    "CM_E": {
+      "symbol": "L",
+      "name": "Interaction",
+      "season_id": "commute",
+      "default_pool": "msk",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "A stranger requests small talk and your script lags.",
+        "You answer minimally and preserve your bandwidth.",
+        "You mask hard and get praised for being easy.",
+        "You set one boundary and the world does not end.",
+        "A misunderstanding escalates and you over-explain.",
+        "You find one kind person and borrow their calm."
+      ]
+    },
+    "CM_F": {
+      "symbol": "Y",
+      "name": "Environment",
+      "season_id": "commute",
+      "default_pool": "sns",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "Lighting hum drills into your concentration.",
+        "Temperature mismatch puts your body on alert.",
+        "You secure a tolerable corner and regulate quickly.",
+        "Sudden noise spike derails your sequence memory.",
+        "You use a sensory tool and reduce overload.",
+        "Conditions stay stable long enough to think clearly."
+      ]
+    },
+    "IN_S": {
+      "symbol": "S",
+      "name": "Situation",
+      "season_id": "interview",
+      "default_pool": "log",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "The interviewer asks for an origin story you have rehearsed too many times.",
+        "The room layout disorients your body before the first question lands.",
+        "You are asked a vague behavioral question with no clear scope.",
+        "A technical prompt appears and your pattern-recognition ignites.",
+        "A contradiction appears between the role and the description.",
+        "You are asked why you want this role, and the true answer is dangerous."
+      ]
+    },
+    "IN_T": {
+      "symbol": "T",
+      "name": "Task",
+      "season_id": "interview",
+      "default_pool": "log",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "Translate your real process into market-safe language.",
+        "Prioritize three urgent requests with incomplete context.",
+        "Explain a conflict while avoiding blame language.",
+        "Solve a logic puzzle while being observed.",
+        "Defend a boundary without sounding resistant.",
+        "Reframe a shutdown as a strategic pause."
+      ]
+    },
+    "IN_A": {
+      "symbol": "A",
+      "name": "Action",
+      "season_id": "interview",
+      "default_pool": "msk",
+      "pool_options": ["msk", "sns", "log"],
+      "prompt_die": "d6",
+      "prompts": [
+        "You perform the expected answer exactly and lose yourself in it.",
+        "You provide a literal answer and create productive tension.",
+        "You over-mask, then forget the core point.",
+        "You name one concrete method and regain control.",
+        "You disclose a need and gamble on honesty.",
+        "You improvise a hybrid answer and surprise everyone, including yourself."
+      ]
+    },
+    "IN_R": {
+      "symbol": "R",
+      "name": "Result",
+      "season_id": "interview",
+      "special_check": "d100_plus_d100_below_stability",
+      "result_check_mode": "below_stability_is_glitch",
+      "rules_text": "Roll d100 (Player) + d100 (The OS). Below current Stability glitches; equal or above is safe."
+    },
+    "RT_G": {
+      "symbol": "B",
+      "name": "Commute Back",
+      "season_id": "return",
+      "default_pool": "sns",
+      "pool_options": ["msk", "sns", "log"],
+      "exhaustion_applies": true,
+      "prompt_die": "d6",
+      "prompts": [
+        "You replay every sentence and cannot stop auditing.",
+        "You detach from memory and navigate on pure routine.",
+        "A delay forces unplanned contact.",
+        "You find silence and your nervous system descends one level.",
+        "You doom-scroll and consume your remaining focus.",
+        "You choose stillness over stimulation and recover slightly."
+      ]
+    },
+    "RT_H": {
+      "symbol": "U",
+      "name": "Recharge",
+      "season_id": "return",
+      "special_check": "d100_recharge",
+      "recharge_mode": "if_roll_higher_set_next_loop_battery",
+      "rules_text": "Roll d100 at loop end. If the roll is higher than current Battery, next-loop Battery becomes that roll."
+    },
+    "RT_I": {
+      "symbol": "M",
+      "name": "Receipt Printing",
+      "season_id": "return",
+      "special_check": "loop_receipt_summary",
+      "rules_text": "Record loop summary with final Battery, final Stability, total Successes, and total Glitches."
+    }
+  },
+  "random_flavor_tables": {
+    "architecture_of_success": {
+      "die": "d12",
+      "description": "When you succeed, roll on the matching pool table to see how The OS renders your victory.",
+      "usage": "post_roll_success_flavor",
+      "tables": {
+        "msk": [
+          "Perfect micro-expression.",
+          "Charismatic Auto-Fill.",
+          "Uncannily pleasant tone.",
+          "The Ideal Citizen aura.",
+          "Narrative-grade charm.",
+          "Flawless social script.",
+          "Mimicry: 100% Match.",
+          "Emotional firewall active.",
+          "Subject is Invisible.",
+          "High-fidelity skin render.",
+          "Persuasion.exe success.",
+          "Script-perfect smile, zero seams visible."
+        ],
+        "sns": [
+          "Frame-perfect movement.",
+          "Weightless coordination.",
+          "Heightened reaction time.",
+          "Sensory overclock.",
+          "Spatial awareness +100%.",
+          "Muscle-memory override.",
+          "Impact dampening.",
+          "Kinetic energy recovery.",
+          "Zero-latency motion.",
+          "Precision equilibrium.",
+          "Surface-tension grip.",
+          "Noise-cancelled calm, every signal in phase."
+        ],
+        "log": [
+          "Elegant code-path found.",
+          "Data-stream clarity.",
+          "Occam's Razor solution.",
+          "System-wide efficiency.",
+          "Pattern recognition lock.",
+          "Probability manipulation.",
+          "Logical Short-Circuit.",
+          "Optimized resource use.",
+          "Root-access intuition.",
+          "Algorithm bypass.",
+          "Multi-threaded thought.",
+          "Self-healing plan compiles on first run."
+        ]
+      }
+    },
+    "big_book_of_glitches": {
+      "die": "d20",
+      "trigger": "total_equals_dc",
+      "stability_penalty": 10,
+      "usage": "post_roll_glitch_flavor",
+      "entries": [
+        "TEXTURE LOSS: An object you touch turns into a bright pink missing grid.",
+        "VOICE DELAY: Your words appear as subtitles in the air before you speak them.",
+        "LOD ERROR: People farther than 5 feet away become low-poly, faceless shapes.",
+        "CLIP-THRU: You momentarily sink ankle-deep into the solid floor.",
+        "GHOST INPUT: Your hand moves to do something your mind did not command.",
+        "SOUND LEAK: You hear the background music of the simulation as loud white noise.",
+        "SENSORY SWAP: You smell the color blue or see the sound of the bus.",
+        "TIME JUMP: You teleport 10 feet forward with no memory of the steps.",
+        "ASSET FLIP: A common object is replaced by a strange item.",
+        "THE VOID-EYE: For a split second, everyone's eyes turn into black pits.",
+        "SKY-BOX TEAR: Looking up reveals the sky is a flat, flickering image file.",
+        "DUPLICATION: There are two of the same person standing next to each other.",
+        "GRAVITY SPIKE: Everything suddenly feels five times heavier for one minute.",
+        "STATIC BREATH: When you exhale, gray digital dust falls from your mouth.",
+        "UI INTERFERENCE: A Low Battery or Error 404 warning floats in your vision.",
+        "MIND-LOOP: You repeat the last sentence you said three times involuntarily.",
+        "STUTTER-STEP: You are stuck in a walking animation but are not moving.",
+        "THE MONITOR: You see a giant, pixelated eye watching from a window.",
+        "DATA BLEED: Fragments of another candidate's memory overlay your own for a moment.",
+        "KERNEL PANIC: The scene freezes, alarms blare, and the loop hard-resets with no transition."
+      ]
+    }
+  }
+}
