@@ -129,7 +129,7 @@
     }
   ],
   "objective_catalog": {
-    "AW_A": {
+    "D": {
       "symbol": "D",
       "name": "Bed",
       "season_id": "awakening",
@@ -145,7 +145,7 @@
         "You wake with unusual clarity and name one true need."
       ]
     },
-    "AW_B": {
+    "O": {
       "symbol": "O",
       "name": "Mirror",
       "season_id": "awakening",
@@ -161,7 +161,7 @@
         "You let one visible glitch stay visible."
       ]
     },
-    "AW_C": {
+    "W": {
       "symbol": "W",
       "name": "Fuel",
       "season_id": "awakening",
@@ -177,7 +177,7 @@
         "You eat slowly and feel almost present."
       ]
     },
-    "CM_D": {
+    "G": {
       "symbol": "G",
       "name": "Connection",
       "season_id": "commute",
@@ -193,7 +193,7 @@
         "You sync with the flow and arrive with spare energy."
       ]
     },
-    "CM_E": {
+    "L": {
       "symbol": "L",
       "name": "Interaction",
       "season_id": "commute",
@@ -209,7 +209,7 @@
         "You find one kind person and borrow their calm."
       ]
     },
-    "CM_F": {
+    "Y": {
       "symbol": "Y",
       "name": "Environment",
       "season_id": "commute",
@@ -225,7 +225,7 @@
         "Conditions stay stable long enough to think clearly."
       ]
     },
-    "IN_S": {
+    "S": {
       "symbol": "S",
       "name": "Situation",
       "season_id": "interview",
@@ -241,7 +241,7 @@
         "You are asked why you want this role, and the true answer is dangerous."
       ]
     },
-    "IN_T": {
+    "T": {
       "symbol": "T",
       "name": "Task",
       "season_id": "interview",
@@ -257,7 +257,7 @@
         "Reframe a shutdown as a strategic pause."
       ]
     },
-    "IN_A": {
+    "A": {
       "symbol": "A",
       "name": "Action",
       "season_id": "interview",
@@ -273,7 +273,7 @@
         "You improvise a hybrid answer and surprise everyone, including yourself."
       ]
     },
-    "IN_R": {
+    "R": {
       "symbol": "R",
       "name": "Result",
       "season_id": "interview",
@@ -281,7 +281,7 @@
       "result_check_mode": "below_stability_is_glitch",
       "rules_text": "Roll d100 (Player) + d100 (The OS). Below current Stability glitches; equal or above is safe."
     },
-    "RT_G": {
+    "B": {
       "symbol": "B",
       "name": "Commute Back",
       "season_id": "return",
@@ -298,7 +298,7 @@
         "You choose stillness over stimulation and recover slightly."
       ]
     },
-    "RT_H": {
+    "U": {
       "symbol": "U",
       "name": "Recharge",
       "season_id": "return",
@@ -306,7 +306,7 @@
       "recharge_mode": "if_roll_higher_set_next_loop_battery",
       "rules_text": "Roll d100 at loop end. If the roll is higher than current Battery, next-loop Battery becomes that roll."
     },
-    "RT_I": {
+    "M": {
       "symbol": "M",
       "name": "Receipt Printing",
       "season_id": "return",

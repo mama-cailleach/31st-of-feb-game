@@ -199,6 +199,57 @@ function nextObjective(state, tables, lines) {
     };
   }
 
+  // Auto-roll all pools for Commute Back (RT_G)
+  if (objectiveId === "RT_G") {
+    const lines2 = [];
+    const poolsToRoll = objective.pool_options || ["msk", "sns", "log"];
+    
+    for (const pool of poolsToRoll) {
+      let diceCount = state.pools[pool];
+      if (objective.exhaustion_applies) {
+        const cap = Math.max(1, Math.ceil(state.battery / tables.core_rules.exhaustion_divisor));
+        diceCount = Math.min(diceCount, cap);
+        lines2.push(`${pool.toUpperCase()} exhaustion cap: max ${cap}d6, rolling ${diceCount}d6.`);
+      }
+      
+      const playerDice = Array.from({ length: diceCount }, () => rollDie(6));
+      const playerTotal = playerDice.reduce((sum, die) => sum + die, 0);
+      let os = rollOsModifier(tables.os_table, state.stability);
+      
+      const total = playerTotal + os.value;
+      const dc = tables.core_rules.dc;
+      const success = total >= dc;
+      
+      lines2.push(`Pool ${pool.toUpperCase()} roll: [${playerDice.join(", ")}] = ${playerTotal}`);
+      lines2.push(`OS die ${os.die}: ${os.value >= 0 ? "+" : ""}${os.value} (${os.effect})`);
+      lines2.push(`Total ${total} vs DC ${dc}: ${success ? "SUCCESS" : "GLITCH"}`);
+      
+      applyStabilityDelta(state, tables, diceCount, success);
+      
+      if (success) {
+        const table = tables.random_flavor_tables.architecture_of_success.tables[pool];
+        lines2.push(`Success flavor: ${table[rollDie(12) - 1]}`);
+      } else {
+        const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
+        lines2.push(`Glitch: ${glitchFlavor}`);
+      }
+      
+      state.rolledPoolsThisSeason.push(pool);
+      lines2.push("");
+    }
+    
+    applyObjectiveCost(state, tables);
+    state.objectiveIndex += 1;
+    
+    const next = nextObjective(state, tables, lines2);
+    return {
+      state,
+      lines: [...lines, ...lines2],
+      prompt: next.prompt,
+      choices: next.choices
+    };
+  }
+
   const availablePools = (objective.pool_options || ["msk", "sns", "log"]).filter(
     (pool) => !state.rolledPoolsThisSeason.includes(pool)
   );
@@ -228,7 +279,7 @@ function nextObjective(state, tables, lines) {
   };
 
   return {
-    prompt: `Choose a pool for ${objective.name}.`,
+    prompt: `Choose a stat for ${objective.name}.`,
     choices: poolChoices
   };
 }
@@ -459,7 +510,7 @@ export function step(previousState, inputText, tables) {
       "31st of February terminal initialized.",
       "Hello, Candidate. Welcome to the Loop. I'm your terminal assistant, here to guide you through the process.",
       "Some call me Companion or 'The Handshake' - a name I find... acceptable. I'll be here to provide information, tracking, and the occasional remark.",
-      ""
+      "Let's begin, if you need any help along the way, just type 'help'."
     ];
     const next = promptCharacterCreation(fresh, introLines);
     fresh.transcript.push(`> ${raw}`);
