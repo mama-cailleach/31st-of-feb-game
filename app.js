@@ -14,8 +14,8 @@ const el = {
   objective: document.getElementById("stat-objective"),
   mode: document.getElementById("stat-mode"),
   trackerSeason: document.getElementById("tracker-season"),
-  trackerStep: document.getElementById("tracker-step"),
-  trackerCompleted: document.getElementById("tracker-completed")
+  trackerLoop: document.getElementById("tracker-loop"),
+  trackerCandidate: document.getElementById("tracker-candidate")
 };
 
 let tables;
@@ -177,28 +177,24 @@ function renderTracker() {
   }
 
   if (state.characterCreation?.pending) {
-    const currentPool = state.characterCreation.order[state.characterCreation.currentIndex] || "-";
     el.trackerSeason.textContent = "Character Creation";
-    el.trackerStep.textContent = `${Math.min(state.characterCreation.currentIndex + 1, 3)}/3`;
-    const assigned = Object.entries(state.pools)
-      .filter(([, value]) => Number.isFinite(value))
-      .map(([pool, value]) => `${pool.toUpperCase()}=${value}`);
-    el.trackerCompleted.textContent = assigned.length > 0
-      ? `${assigned.join(", ")} | Next: ${currentPool.toUpperCase()}`
-      : `Next: ${currentPool.toUpperCase()}`;
+    if (state.characterCreation.stage === "name") {
+      el.trackerLoop.textContent = "1/2";
+      el.trackerCandidate.textContent = "Enter your name";
+    } else {
+      el.trackerLoop.textContent = "2/2";
+      el.trackerCandidate.textContent = `${state.playerName || "Candidate"} - Choose archetype`;
+    }
     return;
   }
 
   const objectiveId = state.currentObjectiveId;
   const objective = objectiveId ? tables.objective_catalog[objectiveId] : null;
   const season = objective ? tables.seasons.find((entry) => entry.id === objective.season_id) : null;
-  const total = state.objectiveOrder?.length || 0;
-  const completed = (state.objectiveOrder || []).slice(0, Math.min(state.objectiveIndex, total));
-  const stepIndex = objectiveId ? state.objectiveIndex + 1 : state.objectiveIndex;
 
   el.trackerSeason.textContent = season ? season.label : "-";
-  el.trackerStep.textContent = total > 0 ? `${Math.min(stepIndex, total)}/${total}` : "-";
-  el.trackerCompleted.textContent = completed.length > 0 ? completed.join(", ") : "-";
+  el.trackerLoop.textContent = `${state.loopCount}`;
+  el.trackerCandidate.textContent = state.playerName || "-";
 }
 
 function persistState() {
@@ -326,7 +322,7 @@ async function boot() {
     el.prompt.textContent = state.prompt || ">";
   } else {
     renderLines([
-      "31st of February companion scaffold ready.",
+      "31st of February terminal scaffold ready.",
       "Type 'start' to begin or 'help' for commands."
     ]);
     renderChoices([

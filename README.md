@@ -1,6 +1,6 @@
-# 31st of February Companion Scaffold
+# 31st of February Terminal Scaffold
 
-Static browser companion app for the zine. It is a terminal-style UI over a pure state-machine engine.
+Static browser terminal app for the zine. It is a terminal-style UI over a pure state-machine engine.
 
 ## Files
 
@@ -27,7 +27,7 @@ Then open:
 
 - `help`
 - `start` or `reset`
-- `assign msk|sns|log 1|2|3` (character creation)
+- `archetype camouflage|strategist|runner` (character creation)
 - `roll msk` / `roll sns` / `roll log`
 - `roll result` (Interview Result check)
 - `roll recharge` (Return Recharge check)
@@ -40,7 +40,7 @@ Then open:
 
 ## Implemented in this scaffold
 
-- Guided character creation flow assigns `1,2,3` to `MSK/SNS/LOG` before objective rolling.
+- Character creation with name input followed by archetype selection: **Social Camouflage** (MSK 3, SNS 1, LOG 2), **System Strategist** (MSK 1, SNS 2, LOG 3), or **Tension Runner** (MSK 2, SNS 3, LOG 1).
 - SIP spend command (`sip spend`) arms an OS-negation for the next pool check.
 - Schema validation runs at boot and blocks play with explicit error output if `tables.json` is malformed.
 - In-app objective tracker shows season, step index, and completed objective IDs.

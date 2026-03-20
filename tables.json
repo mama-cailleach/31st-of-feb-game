@@ -33,11 +33,6 @@
         "table": "random_flavor_tables.big_book_of_glitches",
         "die": "d20",
         "selector": "single_entry"
-      },
-      "equal_dc_overlay": {
-        "table": "random_flavor_tables.big_book_of_glitches",
-        "trigger": "total_equals_dc",
-        "stability_penalty": 10
       }
     }
   },
@@ -112,25 +107,25 @@
       "id": "awakening",
       "label": "Awakening",
       "order": 1,
-      "objectives": ["AW_A", "AW_B", "AW_C"]
+      "objectives": ["D", "O", "W"]
     },
     {
       "id": "commute",
       "label": "Journey",
       "order": 2,
-      "objectives": ["CM_D", "CM_E", "CM_F"]
+      "objectives": ["G", "L", "Y"]
     },
     {
       "id": "interview",
       "label": "Interview",
       "order": 3,
-      "objectives": ["IN_S", "IN_T", "IN_A", "IN_R"]
+      "objectives": ["S", "T", "A", "R"]
     },
     {
       "id": "return",
       "label": "Return",
       "order": 4,
-      "objectives": ["RT_G", "RT_H", "RT_I"]
+      "objectives": ["B", "U", "M"]
     }
   ],
   "objective_catalog": {

@@ -1,4 +1,3 @@
-const CREATION_ORDER = ["msk", "sns", "log"];
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -50,91 +49,97 @@ function pickPrompt(objective) {
   return objective.prompts[Math.floor(Math.random() * objective.prompts.length)];
 }
 
-function currentCreationPool(state) {
-  const idx = state.characterCreation.currentIndex;
-  return state.characterCreation.order[idx] || null;
-}
-
 function buildCreationChoices(state) {
-  const pool = currentCreationPool(state);
-  return state.characterCreation.remainingValues.map((value) => ({
-    label: `Set ${pool.toUpperCase()} to ${value}`,
-    command: `assign ${pool} ${value}`
-  }));
+  return [
+    { label: "Social Camouflage (MSK 3, SNS 1, LOG 2)", command: "archetype camouflage" },
+    { label: "System Strategist (MSK 1, SNS 2, LOG 3)", command: "archetype strategist" },
+    { label: "Tension Runner (MSK 2, SNS 3, LOG 1)", command: "archetype runner" }
+  ];
 }
 
-function promptCharacterCreation(state, lines) {
-  const pool = currentCreationPool(state);
-  const remaining = state.characterCreation.remainingValues.join(", ");
-  lines.push(`Character creation: assign ${pool.toUpperCase()} from remaining values [${remaining}].`);
+function promptNameInput(state, lines) {
+  lines.push("What is your name, Candidate?");
   return {
-    prompt: `Assign ${pool.toUpperCase()} with: assign ${pool} <value>`,
+    prompt: "Enter your name:",
+    choices: []
+  };
+}
+
+function submitName(state, tables, name) {
+  const lines = [];
+  const trimmedName = name.trim();
+  
+  if (!trimmedName) {
+    return {
+      state,
+      lines: ["A name is required to proceed."],
+      prompt: state.prompt,
+      choices: state.choices || []
+    };
+  }
+
+  state.playerName = trimmedName;
+  lines.push(`Candidate ${trimmedName} registered.`);
+  lines.push("");
+  state.characterCreation.stage = "archetype";
+  lines.push("Choose your archetype:");
+  
+  return {
+    state,
+    lines,
+    prompt: "Select an archetype:",
     choices: buildCreationChoices(state)
   };
 }
 
-function finishCharacterCreation(state, tables, lines) {
-  state.characterCreation.pending = false;
-  lines.push("Character creation complete.");
-  lines.push(`Pools: MSK ${state.pools.msk}, SNS ${state.pools.sns}, LOG ${state.pools.log}`);
-  return nextObjective(state, tables, lines);
+function promptCharacterCreation(state, lines) {
+  if (state.characterCreation.stage === "name") {
+    return promptNameInput(state, lines);
+  }
+  lines.push("Choose your archetype:");
+  return {
+    prompt: "Select an archetype:",
+    choices: buildCreationChoices(state)
+  };
 }
 
-function assignCreationValue(state, tables, pool, value) {
+function selectArchetype(state, tables, archetype) {
   const lines = [];
+  const archetypes = {
+    camouflage: { msk: 3, sns: 1, log: 2, name: "Social Camouflage" },
+    strategist: { msk: 1, sns: 2, log: 3, name: "System Strategist" },
+    runner: { msk: 2, sns: 3, log: 1, name: "Tension Runner" }
+  };
 
-  if (!state.characterCreation.pending) {
-    return { state, lines: ["Character creation is already complete."], prompt: ">", choices: [] };
-  }
-
-  const expectedPool = currentCreationPool(state);
-  if (pool !== expectedPool) {
+  if (!archetypes[archetype]) {
     return {
       state,
-      lines: [`Assign ${expectedPool.toUpperCase()} next. Use: assign ${expectedPool} <value>`],
+      lines: ["Unknown archetype."],
       prompt: state.prompt,
       choices: state.choices || []
     };
   }
 
-  if (!state.characterCreation.remainingValues.includes(value)) {
-    return {
-      state,
-      lines: ["That value is unavailable. Use one of the remaining values shown."],
-      prompt: state.prompt,
-      choices: state.choices || []
-    };
-  }
+  const arch = archetypes[archetype];
+  state.pools.msk = arch.msk;
+  state.pools.sns = arch.sns;
+  state.pools.log = arch.log;
+  lines.push(`Archetype selected: ${arch.name}`);
+  lines.push(`Pools: MSK ${state.pools.msk}, SNS ${state.pools.sns}, LOG ${state.pools.log}`);
+  lines.push("");
+  lines.push(`Welcome, ${state.playerName}. Your pools are set. Prepare for the loop.`);
 
-  state.pools[pool] = value;
-  state.characterCreation.remainingValues = state.characterCreation.remainingValues.filter((n) => n !== value);
-  state.characterCreation.currentIndex += 1;
-  lines.push(`${pool.toUpperCase()} set to ${value}.`);
-
-  if (state.characterCreation.currentIndex >= state.characterCreation.order.length - 1) {
-    const lastPool = currentCreationPool(state);
-    if (lastPool && state.characterCreation.remainingValues.length === 1) {
-      const lastValue = state.characterCreation.remainingValues[0];
-      state.pools[lastPool] = lastValue;
-      state.characterCreation.remainingValues = [];
-      state.characterCreation.currentIndex += 1;
-      lines.push(`${lastPool.toUpperCase()} auto-set to ${lastValue}.`);
-    }
-    return {
-      state,
-      lines,
-      ...finishCharacterCreation(state, tables, lines)
-    };
-  }
-
-  const next = promptCharacterCreation(state, lines);
+  state.characterCreation.pending = false;
+  lines.push("Character creation complete.");
   return {
     state,
     lines,
-    prompt: next.prompt,
-    choices: next.choices
+    ...nextObjective(state, tables, lines)
   };
 }
+
+
+
 
 function nextObjective(state, tables, lines) {
   if (state.objectiveIndex >= state.objectiveOrder.length) {
@@ -147,6 +152,12 @@ function nextObjective(state, tables, lines) {
   const objectiveId = state.objectiveOrder[state.objectiveIndex];
   const objective = tables.objective_catalog[objectiveId];
   state.currentObjectiveId = objectiveId;
+
+  // Detect season change and reset pool usage tracker
+  if (state.currentSeasonId !== objective.season_id) {
+    state.currentSeasonId = objective.season_id;
+    state.rolledPoolsThisSeason = [];
+  }
 
   lines.push("");
   lines.push(`[${objective.symbol}] ${objective.name} (${objectiveId})`);
@@ -188,7 +199,18 @@ function nextObjective(state, tables, lines) {
     };
   }
 
-  const poolChoices = (objective.pool_options || ["msk", "sns", "log"]).map((pool) => ({
+  const availablePools = (objective.pool_options || ["msk", "sns", "log"]).filter(
+    (pool) => !state.rolledPoolsThisSeason.includes(pool)
+  );
+
+  if (availablePools.length === 0) {
+    lines.push("All pools have been used this season.");
+    state.objectiveIndex += 1;
+    const next = nextObjective(state, tables, lines);
+    return next;
+  }
+
+  const poolChoices = availablePools.map((pool) => ({
     label: `Roll ${pool.toUpperCase()} (${state.pools[pool]}d6)`,
     command: `roll ${pool}`
   }));
@@ -264,22 +286,22 @@ function resolvePoolRoll(state, tables, pool, manualPlayerDice) {
   const dc = tables.core_rules.dc;
   const success = total >= dc;
 
-  lines.push(`Pool ${pool.toUpperCase()} roll: [${playerDice.join(", ")}] = ${playerTotal}`);
+  lines.push(`Stat ${pool.toUpperCase()} roll: [${playerDice.join(", ")}] = ${playerTotal}`);
   lines.push(`OS die ${os.die}: ${os.value >= 0 ? "+" : ""}${os.value} (${os.effect})`);
   lines.push(`Total ${total} vs DC ${dc}: ${success ? "SUCCESS" : "GLITCH"}`);
 
   applyStabilityDelta(state, tables, diceCount, success);
 
-  if (total === dc) {
-    const overlayPenalty = tables.narrative_resolution.outcome_flavor.equal_dc_overlay.stability_penalty;
-    state.stability = clamp(state.stability - overlayPenalty, tables.core_rules.stability_floor, tables.core_rules.stability_ceiling);
-    const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
-    lines.push(`Equal-DC overlay: Stability -${overlayPenalty}% and forced glitch flavor.`);
-    lines.push(`Glitch: ${glitchFlavor}`);
-  } else if (success) {
+  if (success) {
     const table = tables.random_flavor_tables.architecture_of_success.tables[pool];
-    lines.push(`Success flavor: ${table[rollDie(12) - 1]}`);
+    lines.push(`Success prompt: ${table[rollDie(12) - 1]}`);
+  } else {
+    const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
+    lines.push(`Glitch prompt: ${glitchFlavor}`);
   }
+
+  // Mark this pool as used this season
+  state.rolledPoolsThisSeason.push(pool);
 
   applyObjectiveCost(state, tables);
   state.objectiveIndex += 1;
@@ -355,10 +377,9 @@ export function newGame(tables) {
     pools: { msk: null, sns: null, log: null },
     characterCreation: {
       pending: true,
-      order: [...CREATION_ORDER],
-      currentIndex: 0,
-      remainingValues: [...tables.pools.creation_values]
+      stage: "name"
     },
+    playerName: null,
     battery: 100,
     stability: 100,
     sip: tables.sip_rules.start,
@@ -367,6 +388,8 @@ export function newGame(tables) {
     objectiveOrder: flattenObjectiveOrder(tables.seasons),
     objectiveIndex: 0,
     currentObjectiveId: null,
+    currentSeasonId: null,
+    rolledPoolsThisSeason: [],
     successes: 0,
     glitches: 0,
     awaiting: null,
@@ -393,7 +416,7 @@ export function step(previousState, inputText, tables) {
   if (command === "help") {
     lines.push("Commands:");
     lines.push("- start | reset");
-    lines.push("- assign msk|sns|log 1|2|3 (during character creation)");
+    lines.push("- archetype camouflage|strategist|runner (character creation)");
     lines.push("- roll msk|sns|log|result|recharge");
     lines.push("- sip spend");
     lines.push("- mode auto|manual");
@@ -433,8 +456,10 @@ export function step(previousState, inputText, tables) {
     const fresh = newGame(tables);
     fresh.started = true;
     const introLines = [
-      "31st of February companion initialized.",
-      "You are Candidate Ibis. Assign your stat pools to begin."
+      "31st of February terminal initialized.",
+      "Hello, Candidate. Welcome to the Loop. I'm your terminal assistant, here to guide you through the process.",
+      "Some call me Companion or 'The Handshake' - a name I find... acceptable. I'll be here to provide information, tracking, and the occasional remark.",
+      ""
     ];
     const next = promptCharacterCreation(fresh, introLines);
     fresh.transcript.push(`> ${raw}`);
@@ -487,18 +512,21 @@ export function step(previousState, inputText, tables) {
     };
   }
 
-  if (command === "assign") {
-    const pool = (args[0] || "").toLowerCase();
-    const value = Number(args[1]);
-    if (!["msk", "sns", "log"].includes(pool) || ![1, 2, 3].includes(value)) {
+  if (state.characterCreation?.pending && state.characterCreation.stage === "name" && command !== "archetype") {
+    return submitName(state, tables, raw);
+  }
+
+  if (command === "archetype") {
+    const arch = (args[0] || "").toLowerCase();
+    if (!["camouflage", "strategist", "runner"].includes(arch)) {
       return {
         state,
-        lines: ["Usage: assign msk|sns|log 1|2|3"],
+        lines: ["Usage: archetype camouflage|strategist|runner"],
         prompt: state.prompt || ">",
         choices: state.choices || []
       };
     }
-    return assignCreationValue(state, tables, pool, value);
+    return selectArchetype(state, tables, arch);
   }
 
   if (command === "sip") {
