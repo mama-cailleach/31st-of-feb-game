@@ -472,7 +472,7 @@ export function step(previousState, inputText, tables) {
     lines.push("- sip spend");
     lines.push("- mode auto|manual");
     lines.push("- manual <dice...>");
-    lines.push("- save | load | export");
+    lines.push("- export");
     lines.push("- status");
     return { state, lines, prompt: ">", choices: [] };
   }
@@ -520,15 +520,6 @@ export function step(previousState, inputText, tables) {
       lines: introLines,
       prompt: next.prompt,
       choices: next.choices
-    };
-  }
-
-  if (command === "save" || command === "load") {
-    return {
-      state,
-      lines: ["Handled by UI storage layer."],
-      prompt: ">",
-      choices: []
     };
   }
 
@@ -707,23 +698,3 @@ export function step(previousState, inputText, tables) {
   };
 }
 
-export function serializeState(state) {
-  return JSON.stringify(state);
-}
-
-export function deserializeState(serialized, tables) {
-  try {
-    const parsed = JSON.parse(serialized);
-    const baseline = newGame(tables);
-    return {
-      ...baseline,
-      ...parsed,
-      pools: {
-        ...baseline.pools,
-        ...(parsed.pools || {})
-      }
-    };
-  } catch {
-    return newGame(tables);
-  }
-}

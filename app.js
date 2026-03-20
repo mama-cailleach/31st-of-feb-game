@@ -1,6 +1,5 @@
-import { newGame, step, serializeState, deserializeState } from "./engine.js";
+import { newGame, step } from "./engine.js";
 
-const STORAGE_KEY = "31st_of_feb_companion_state";
 const LOG_LIMIT = 500;
 
 const el = {
@@ -24,7 +23,8 @@ let history = [];
 let historyIndex = -1;
 
 async function loadTables() {
-  const response = await fetch("./tables.json");
+  // Bypass browser cache so table edits are reflected immediately during iteration.
+  const response = await fetch(`./tables.json?v=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to load tables.json: ${response.status}`);
   }
@@ -197,18 +197,6 @@ function renderTracker() {
   el.trackerCandidate.textContent = state.playerName || "-";
 }
 
-function persistState() {
-  localStorage.setItem(STORAGE_KEY, serializeState(state));
-}
-
-function loadState() {
-  const serialized = localStorage.getItem(STORAGE_KEY);
-  if (!serialized) {
-    return newGame(tables);
-  }
-  return deserializeState(serialized, tables);
-}
-
 function downloadTextFile(fileName, text) {
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -232,16 +220,6 @@ function runCommand(input, pushHistory = true) {
     historyIndex = history.length;
   }
 
-  if (raw.toLowerCase() === "load") {
-    state = loadState();
-    renderLines(["Loaded state from localStorage."]);
-    state.transcript.push("Loaded state from localStorage.");
-    renderChoices(state.choices || []);
-    el.prompt.textContent = state.prompt || ">";
-    renderStatus();
-    return;
-  }
-
   const result = step(state, raw, tables);
   state = result.state;
   state.prompt = result.prompt;
@@ -252,15 +230,10 @@ function runCommand(input, pushHistory = true) {
   renderChoices(result.choices || []);
   el.prompt.textContent = result.prompt || ">";
 
-  if (raw.toLowerCase() === "save") {
-    persistState();
-    renderLines(["Saved state to localStorage."]);
-  } else if (result.exportText) {
+  if (result.exportText) {
     const stamp = new Date().toISOString().replace(/[.:]/g, "-");
     downloadTextFile(`31st-of-feb-loop-${stamp}.txt`, result.exportText);
     renderLines(["Transcript downloaded."]);
-  } else {
-    persistState();
   }
 
   renderStatus();
@@ -312,30 +285,20 @@ async function boot() {
     return;
   }
 
-  state = loadState();
-  if (state.started) {
-    renderLines([
-      "State restored from localStorage.",
-      "Continue with the current loop or use 'reset' for a fresh run."
-    ]);
-    renderChoices(state.choices || []);
-    el.prompt.textContent = state.prompt || ">";
-  } else {
-    renderLines([
-      "31st of February terminal scaffold ready.",
-      "Type 'start' to begin or 'help' for commands."
-    ]);
-    renderChoices([
-      { label: "Start Loop", command: "start" },
-      { label: "Help", command: "help" },
-      { label: "Manual Dice Mode", command: "mode manual" }
-    ]);
-    el.prompt.textContent = ">";
-  }
+  state = newGame(tables);
+  renderLines([
+    "31st of February terminal scaffold ready.",
+    "Type 'start' to begin or 'help' for commands."
+  ]);
+  renderChoices([
+    { label: "Start Loop", command: "start" },
+    { label: "Help", command: "help" },
+    { label: "Manual Dice Mode", command: "mode manual" }
+  ]);
+  el.prompt.textContent = ">";
 
   renderStatus();
   bindInput();
-  persistState();
   el.input.focus();
 }
 

@@ -6,7 +6,7 @@ Static browser terminal app for the zine. It is a terminal-style UI over a pure 
 
 - `index.html`: app shell (status, log, choices, input)
 - `styles.css`: terminal visual style and responsive layout
-- `app.js`: UI wiring, command history, localStorage save/load, export
+- `app.js`: UI wiring, command history, export
 - `engine.js`: pure game logic (`newGame`, `step`)
 - `tables.json`: game rules, objectives, and flavor tables
 
@@ -35,7 +35,6 @@ Then open:
 - `mode auto` / `mode manual`
 - `manual <dice...>` (when manual mode is active)
 - `status`
-- `save` / `load`
 - `export`
 
 ## Implemented in this scaffold
