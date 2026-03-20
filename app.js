@@ -1,6 +1,7 @@
 import { newGame, step } from "./engine.js";
 
 const LOG_LIMIT = 500;
+const LINE_DELAY_MS = 1000;
 
 const el = {
   log: document.getElementById("log"),
@@ -21,6 +22,7 @@ let tables;
 let state;
 let history = [];
 let historyIndex = -1;
+let commandQueue = Promise.resolve();
 
 async function loadTables() {
   // Bypass browser cache so table edits are reflected immediately during iteration.
@@ -72,6 +74,16 @@ function validateTablesSchema(data) {
   const creationValues = pools.creation_values;
   if (!Array.isArray(creationValues) || creationValues.length !== 3) {
     errors.push("pools.creation_values must be [1,2,3].");
+  }
+
+  const coreRules = data.core_rules || {};
+  if (
+    "battery_reboot_value" in coreRules
+    && (!Number.isFinite(coreRules.battery_reboot_value)
+      || coreRules.battery_reboot_value < coreRules.battery_floor
+      || coreRules.battery_reboot_value > coreRules.battery_ceiling)
+  ) {
+    errors.push("core_rules.battery_reboot_value must be a number between battery_floor and battery_ceiling.");
   }
 
   const objectiveCatalog = data.objective_catalog || {};
@@ -128,6 +140,11 @@ function validateTablesSchema(data) {
     errors.push("big_book_of_glitches.entries must be a non-empty array.");
   }
 
+  const batteryZeroEntries = data.random_flavor_tables?.battery_zero_events?.entries;
+  if (!Array.isArray(batteryZeroEntries) || batteryZeroEntries.length === 0) {
+    errors.push("battery_zero_events.entries must be a non-empty array.");
+  }
+
   return errors;
 }
 
@@ -138,16 +155,31 @@ function lineElement(text, kind = "out") {
   return p;
 }
 
-function renderLines(lines, kind = "out") {
-  lines.forEach((line) => {
-    el.log.appendChild(lineElement(line, kind));
-  });
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function appendLine(line, kind = "out") {
+  el.log.appendChild(lineElement(line, kind));
 
   while (el.log.childElementCount > LOG_LIMIT) {
     el.log.removeChild(el.log.firstChild);
   }
 
   el.log.scrollTop = el.log.scrollHeight;
+}
+
+async function renderLines(lines, kind = "out") {
+  for (let i = 0; i < lines.length; i += 1) {
+    appendLine(lines[i], kind);
+    if (i < lines.length - 1) {
+      await sleep(LINE_DELAY_MS);
+    }
+  }
+}
+
+function enqueueCommand(input, pushHistory = true) {
+  commandQueue = commandQueue.then(() => runCommand(input, pushHistory));
 }
 
 function renderChoices(choices) {
@@ -157,7 +189,7 @@ function renderChoices(choices) {
     button.type = "button";
     button.className = "choice-btn";
     button.textContent = `${index + 1}. ${choice.label}`;
-    button.addEventListener("click", () => runCommand(choice.command, false));
+    button.addEventListener("click", () => enqueueCommand(choice.command, false));
     el.choices.appendChild(button);
   });
 }
@@ -207,13 +239,13 @@ function downloadTextFile(fileName, text) {
   URL.revokeObjectURL(url);
 }
 
-function runCommand(input, pushHistory = true) {
+async function runCommand(input, pushHistory = true) {
   const raw = input.trim();
   if (!raw) {
     return;
   }
 
-  renderLines([`> ${raw}`], "in");
+  await renderLines([`> ${raw}`], "in");
   state.transcript.push(`> ${raw}`);
   if (pushHistory) {
     history.push(raw);
@@ -225,7 +257,7 @@ function runCommand(input, pushHistory = true) {
   state.prompt = result.prompt;
   state.choices = result.choices;
 
-  renderLines(result.lines);
+  await renderLines(result.lines);
   result.lines.forEach((line) => state.transcript.push(line));
   renderChoices(result.choices || []);
   el.prompt.textContent = result.prompt || ">";
@@ -233,7 +265,7 @@ function runCommand(input, pushHistory = true) {
   if (result.exportText) {
     const stamp = new Date().toISOString().replace(/[.:]/g, "-");
     downloadTextFile(`31st-of-feb-loop-${stamp}.txt`, result.exportText);
-    renderLines(["Transcript downloaded."]);
+    await renderLines(["Transcript downloaded."]);
   }
 
   renderStatus();
@@ -242,7 +274,7 @@ function runCommand(input, pushHistory = true) {
 function bindInput() {
   el.input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
-      runCommand(el.input.value, true);
+      enqueueCommand(el.input.value, true);
       el.input.value = "";
       return;
     }
@@ -272,21 +304,21 @@ async function boot() {
   try {
     tables = await loadTables();
   } catch (error) {
-    renderLines([`Error loading tables: ${error.message}`]);
+    await renderLines([`Error loading tables: ${error.message}`]);
     el.input.disabled = true;
     return;
   }
 
   const schemaErrors = validateTablesSchema(tables);
   if (schemaErrors.length > 0) {
-    renderLines(["Schema validation failed for tables.json.", ...schemaErrors.map((err) => `- ${err}`)]);
+    await renderLines(["Schema validation failed for tables.json.", ...schemaErrors.map((err) => `- ${err}`)]);
     el.prompt.textContent = "schema-error>";
     el.input.disabled = true;
     return;
   }
 
   state = newGame(tables);
-  renderLines([
+  await renderLines([
     "31st of February terminal scaffold ready.",
     "Type 'start' to begin or 'help' for commands."
   ]);

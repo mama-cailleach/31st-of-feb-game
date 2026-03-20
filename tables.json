@@ -4,6 +4,7 @@
   "core_rules": {
     "dc": 13,
     "objective_battery_cost": 5,
+    "battery_reboot_value": 60,
     "stability_step_per_die": 5,
     "exhaustion_divisor": 20,
     "exhaustion_applies_to": ["RT_G"],
@@ -390,6 +391,18 @@
         "THE MONITOR: You see a giant, pixelated eye watching from a window.",
         "DATA BLEED: Fragments of another candidate's memory overlay your own for a moment.",
         "KERNEL PANIC: The scene freezes, alarms blare, and the loop hard-resets with no transition."
+      ]
+    },
+    "battery_zero_events": {
+      "die": "d6",
+      "usage": "battery_zero_hard_reset_flavor",
+      "entries": [
+        "HARD POWER-OFF: Your vision clips to black mid-step. You wake up instantly sitting upright in bed, heart racing, with the taste of copper in your mouth.",
+        "MEMORY LEAK: As you collapse, you see the last 24 hours playing backward at 10x speed. You wake up with a crushing headache and a vague sense of deja vu.",
+        "FRAGMENTED AWAKENING: You wake up, but the room is wrong. The furniture is shifted two inches to the left. It takes a moment for the OS to 'snap' the room back into place.",
+        "GHOST AUDIO: You don't wake up to an alarm; you wake up to the sound of your own voice screaming from the hallway. When you look, the hallway is empty.",
+        "BUFFER OVERFLOW: You wake up covered in 'Digital Sweat' - a layer of glowing, translucent hex-code that evaporates as soon as you touch it.",
+        "KERNEL PANIC: You wake up 5 minutes before the alarm. For 300 seconds, you are the only thing rendered in a pitch-black void. Then, the room 'pops' into existence."
       ]
     }
   }

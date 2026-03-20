@@ -125,7 +125,7 @@ function selectArchetype(state, tables, archetype) {
   state.pools.sns = arch.sns;
   state.pools.log = arch.log;
   lines.push(`Archetype selected: ${arch.name}`);
-  lines.push(`Pools: MSK ${state.pools.msk}, SNS ${state.pools.sns}, LOG ${state.pools.log}`);
+  lines.push(`Stats: Mask ${state.pools.msk}d6, Sensory ${state.pools.sns}d6, Logic ${state.pools.log}d6`);
   lines.push("");
   lines.push(`Welcome, ${state.playerName}. Your pools are set. Prepare for the loop.`);
 
@@ -147,6 +147,7 @@ function nextObjective(state, tables, lines) {
     state.loopCount += 1;
     state.sip += tables.sip_rules.gain_per_completed_loop;
     lines.push("A full loop has completed. SIP +1.");
+    lines.push("----------------");
   }
 
   const objectiveId = state.objectiveOrder[state.objectiveIndex];
@@ -160,7 +161,8 @@ function nextObjective(state, tables, lines) {
   }
 
   lines.push("");
-  lines.push(`[${objective.symbol}] ${objective.name} (${objectiveId})`);
+  lines.push("----------------");
+  lines.push(`[${objective.symbol}] ${objective.name}`);
   const setupPrompt = pickPrompt(objective);
   if (setupPrompt) {
     lines.push(`Prompt: ${setupPrompt}`);
@@ -172,7 +174,11 @@ function nextObjective(state, tables, lines) {
 
     if (state.stability <= 0) {
       state.gameOver = true;
-      lines.push("Stability reached 0%. The loop breaks. You are free.");
+      lines.push("----------------");
+      lines.push("Stability reached 0% Success Probability. The loop breaks...");
+      lines.push("But there's a lingering doubt in the back of your head. Was it really the loop breaking? Or did you just... win?");
+      lines.push("Either way you just hope the calendar tomorrow says the 1st of March.");
+      lines.push("----------------");
       return { prompt: "(game over)", choices: [] };
     }
 
@@ -199,8 +205,8 @@ function nextObjective(state, tables, lines) {
     };
   }
 
-  // Auto-roll all pools for Commute Back (RT_G)
-  if (objectiveId === "RT_G") {
+  // Auto-roll all pools for Commute Back objective.
+  if (objective.exhaustion_applies) {
     const lines2 = [];
     const poolsToRoll = objective.pool_options || ["msk", "sns", "log"];
     
@@ -223,8 +229,18 @@ function nextObjective(state, tables, lines) {
       lines2.push(`Pool ${pool.toUpperCase()} roll: [${playerDice.join(", ")}] = ${playerTotal}`);
       lines2.push(`OS die ${os.die}: ${os.value >= 0 ? "+" : ""}${os.value} (${os.effect})`);
       lines2.push(`Total ${total} vs DC ${dc}: ${success ? "SUCCESS" : "GLITCH"}`);
+      lines2.push("----------------");
       
       applyStabilityDelta(state, tables, diceCount, success);
+      const stabilityCollapsed = handleStabilityCollapse(state, lines2);
+      if (stabilityCollapsed) {
+        return {
+          state,
+          lines: [...lines, ...stabilityCollapsed.lines],
+          prompt: stabilityCollapsed.prompt,
+          choices: stabilityCollapsed.choices
+        };
+      }
       
       if (success) {
         const table = tables.random_flavor_tables.architecture_of_success.tables[pool];
@@ -233,12 +249,21 @@ function nextObjective(state, tables, lines) {
         const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
         lines2.push(`Glitch: ${glitchFlavor}`);
       }
-      
+      lines2.push("----------------");
       state.rolledPoolsThisSeason.push(pool);
       lines2.push("");
     }
     
     applyObjectiveCost(state, tables);
+    const batteryDepleted = handleBatteryDepletion(state, tables, lines2);
+    if (batteryDepleted) {
+      return {
+        state,
+        lines: [...lines, ...batteryDepleted.lines],
+        prompt: batteryDepleted.prompt,
+        choices: batteryDepleted.choices
+      };
+    }
     state.objectiveIndex += 1;
     
     const next = nextObjective(state, tables, lines2);
@@ -293,6 +318,62 @@ function applyObjectiveCost(state, tables) {
   );
 }
 
+function handleBatteryDepletion(state, tables, lines) {
+  if (state.battery > 0) {
+    return null;
+  }
+
+  lines.push("----------------");
+  lines.push("BATTERY DEPLETED: 0%. Loop terminated.");
+  const batteryZeroEntries = tables.random_flavor_tables?.battery_zero_events?.entries;
+  if (Array.isArray(batteryZeroEntries) && batteryZeroEntries.length > 0) {
+    lines.push(`Battery Zero Flavor: ${batteryZeroEntries[rollDie(batteryZeroEntries.length) - 1]}`);
+  }
+
+  // Hard loop reset on battery depletion.
+  const configuredRebootBattery = Number(tables.core_rules.battery_reboot_value);
+  const rebootBattery = Number.isFinite(configuredRebootBattery)
+    ? configuredRebootBattery
+    : tables.core_rules.battery_ceiling;
+  state.battery = clamp(rebootBattery, tables.core_rules.battery_floor, tables.core_rules.battery_ceiling);
+  state.objectiveIndex = 0;
+  state.currentObjectiveId = null;
+  state.currentSeasonId = null;
+  state.rolledPoolsThisSeason = [];
+  state.awaiting = null;
+  state.sipNegateNextOs = false;
+  state.loopCount += 1;
+  state.sip += tables.sip_rules.gain_per_completed_loop;
+  lines.push(`Emergency reboot complete. Battery reset to ${state.battery}%. New loop started (Loop ${state.loopCount}). SIP +${tables.sip_rules.gain_per_completed_loop}.`);
+  lines.push("----------------");
+
+  const next = nextObjective(state, tables, lines);
+  return {
+    state,
+    lines,
+    prompt: next.prompt,
+    choices: next.choices
+  };
+}
+
+function handleStabilityCollapse(state, lines) {
+  if (state.stability > 0) {
+    return null;
+  }
+
+  state.gameOver = true;
+  state.awaiting = null;
+  lines.push("----------------");
+  lines.push("STABILITY COLLAPSE: 0%. The loop breaks. You are free.");
+  lines.push("----------------");
+  return {
+    state,
+    lines,
+    prompt: "(game over)",
+    choices: []
+  };
+}
+
 function applyStabilityDelta(state, tables, playerDiceCount, success) {
   const rules = tables.core_rules;
   const delta = rules.stability_step_per_die * playerDiceCount;
@@ -342,6 +423,10 @@ function resolvePoolRoll(state, tables, pool, manualPlayerDice) {
   lines.push(`Total ${total} vs DC ${dc}: ${success ? "SUCCESS" : "GLITCH"}`);
 
   applyStabilityDelta(state, tables, diceCount, success);
+  const stabilityCollapsed = handleStabilityCollapse(state, lines);
+  if (stabilityCollapsed) {
+    return stabilityCollapsed;
+  }
 
   if (success) {
     const table = tables.random_flavor_tables.architecture_of_success.tables[pool];
@@ -355,6 +440,10 @@ function resolvePoolRoll(state, tables, pool, manualPlayerDice) {
   state.rolledPoolsThisSeason.push(pool);
 
   applyObjectiveCost(state, tables);
+  const batteryDepleted = handleBatteryDepletion(state, tables, lines);
+  if (batteryDepleted) {
+    return batteryDepleted;
+  }
   state.objectiveIndex += 1;
 
   const next = nextObjective(state, tables, lines);
@@ -384,6 +473,10 @@ function resolveResultCheck(state, tables, manualPair) {
   }
 
   applyObjectiveCost(state, tables);
+  const batteryDepleted = handleBatteryDepletion(state, tables, lines);
+  if (batteryDepleted) {
+    return batteryDepleted;
+  }
   state.objectiveIndex += 1;
 
   const next = nextObjective(state, tables, lines);
@@ -409,6 +502,10 @@ function resolveRecharge(state, tables, manualRoll) {
   }
 
   applyObjectiveCost(state, tables);
+  const batteryDepleted = handleBatteryDepletion(state, tables, lines);
+  if (batteryDepleted) {
+    return batteryDepleted;
+  }
   state.objectiveIndex += 1;
 
   const next = nextObjective(state, tables, lines);
@@ -509,7 +606,7 @@ export function step(previousState, inputText, tables) {
     const introLines = [
       "31st of February terminal initialized.",
       "Hello, Candidate. Welcome to the Loop. I'm your terminal assistant, here to guide you through the process.",
-      "Some call me Companion or 'The Handshake' - a name I find... acceptable. I'll be here to provide information, tracking, and the occasional remark.",
+      "Some call me Companion - a name I find... acceptable. I'll be here to provide information, tracking, and the occasional remark.",
       "Let's begin, if you need any help along the way, just type 'help'."
     ];
     const next = promptCharacterCreation(fresh, introLines);
@@ -551,6 +648,15 @@ export function step(previousState, inputText, tables) {
       lines: ["Run 'start' to begin a loop."],
       prompt: ">",
       choices: [{ label: "Start", command: "start" }]
+    };
+  }
+
+  if (state.gameOver) {
+    return {
+      state,
+      lines: ["The loop is broken. Use 'reset' to start again."],
+      prompt: "(game over)",
+      choices: [{ label: "Reset", command: "reset" }]
     };
   }
 
