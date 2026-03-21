@@ -28,11 +28,11 @@ function rollOsModifier(osTable, stability) {
   };
 }
 
-function flattenObjectiveOrder(seasons) {
-  return seasons
+function flattenObjectiveOrder(tations) {
+  return tations
     .slice()
     .sort((a, b) => a.order - b.order)
-    .flatMap((season) => season.objectives);
+    .flatMap((tation) => tation.objectives);
 }
 
 function parseAction(input) {
@@ -170,24 +170,24 @@ function nextObjective(state, tables, lines) {
   const objectiveId = state.objectiveOrder[state.objectiveIndex];
   const objective = tables.objective_catalog[objectiveId];
   state.currentObjectiveId = objectiveId;
-  const season = tables.seasons.find((entry) => entry.id === objective.season_id);
+  const tation = tables.tations.find((entry) => entry.id === objective.tation_id);
 
-  // Detect season change and reset pool usage tracker
-  if (state.currentSeasonId !== objective.season_id) {
-    state.currentSeasonId = objective.season_id;
-    state.rolledPoolsThisSeason = [];
+  // Detect tation change and reset pool usage tracker
+  if (state.currentStationId !== objective.tation_id) {
+    state.currentStationId = objective.tation_id;
+    state.rolledPoolsThisStation = [];
 
-    const objectiveNames = (season?.objectives || [])
+    const objectiveNames = (tation?.objectives || [])
       .map((id) => tables.objective_catalog[id]?.name)
       .filter(Boolean)
       .join(", ");
-    const seasonPrompt = SEASON_PROMPT_PLACEHOLDERS[rollDie(6) - 1];
+    const tationPrompt = SEASON_PROMPT_PLACEHOLDERS[rollDie(6) - 1];
 
     lines.push("");
     lines.push("----------------");
-    lines.push(`Season: ${season?.label || objective.season_id}`);
+    lines.push(`Station: ${tation?.label || objective.tation_id}`);
     lines.push(`Objectives: ${objectiveNames || "-"}`);
-    lines.push(`Prompt: ${seasonPrompt}`);
+    lines.push(`Prompt: ${tationPrompt}`);
     lines.push("----------------");
   }
 
@@ -283,7 +283,7 @@ function nextObjective(state, tables, lines) {
         lines2.push(`Glitch: ${glitchFlavor}`);
       }
       lines2.push("----------------");
-      state.rolledPoolsThisSeason.push(pool);
+      state.rolledPoolsThisStation.push(pool);
       lines2.push("");
     }
     
@@ -309,11 +309,11 @@ function nextObjective(state, tables, lines) {
   }
 
   const availablePools = (objective.pool_options || ["msk", "sns", "log"]).filter(
-    (pool) => !state.rolledPoolsThisSeason.includes(pool)
+    (pool) => !state.rolledPoolsThisStation.includes(pool)
   );
 
   if (availablePools.length === 0) {
-    lines.push("All pools have been used this season.");
+    lines.push("All pools have been used this tation.");
     state.objectiveIndex += 1;
     const next = nextObjective(state, tables, lines);
     return next;
@@ -371,8 +371,8 @@ function handleBatteryDepletion(state, tables, lines) {
   state.battery = clamp(rebootBattery, tables.core_rules.battery_floor, tables.core_rules.battery_ceiling);
   state.objectiveIndex = 0;
   state.currentObjectiveId = null;
-  state.currentSeasonId = null;
-  state.rolledPoolsThisSeason = [];
+  state.currentStationId = null;
+  state.rolledPoolsThisStation = [];
   state.awaiting = null;
   state.sipNegateNextOs = false;
   state.loopCount += 1;
@@ -471,8 +471,8 @@ function resolvePoolRoll(state, tables, pool, manualPlayerDice) {
     lines.push(`Glitch prompt: ${glitchFlavor}`);
   }
 
-  // Mark this pool as used this season
-  state.rolledPoolsThisSeason.push(pool);
+  // Mark this pool as used this tation
+  state.rolledPoolsThisStation.push(pool);
 
   applyObjectiveCost(state, tables);
   const batteryDepleted = handleBatteryDepletion(state, tables, lines);
@@ -582,11 +582,11 @@ export function newGame(tables) {
     sip: tables.sip_rules.start,
     sipNegateNextOs: false,
     loopCount: 1,
-    objectiveOrder: flattenObjectiveOrder(tables.seasons),
+    objectiveOrder: flattenObjectiveOrder(tables.tations),
     objectiveIndex: 0,
     currentObjectiveId: null,
-    currentSeasonId: null,
-    rolledPoolsThisSeason: [],
+    currentStationId: null,
+    rolledPoolsThisStation: [],
     successes: 0,
     glitches: 0,
     awaiting: null,

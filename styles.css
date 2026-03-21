@@ -79,7 +79,7 @@ body {
 
 .tracker-panel {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2.2fr) repeat(3, fit-content(9ch));
   gap: 0.7rem;
   padding: 0.8rem 1rem;
   border-bottom: 1px solid var(--border);
@@ -108,6 +108,13 @@ body {
 
 .tracker-wide strong {
   font-size: 0.86rem;
+}
+
+.tracker-short strong {
+  width: 4ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .log {

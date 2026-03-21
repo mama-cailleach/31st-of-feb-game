@@ -14,7 +14,7 @@ const el = {
   objective: document.getElementById("stat-objective"),
   osDie: document.getElementById("tracker-os-die"),
   mode: document.getElementById("stat-mode"),
-  trackerSeason: document.getElementById("tracker-season"),
+  trackerStation: document.getElementById("tracker-tation"),
   trackerLoop: document.getElementById("tracker-loop"),
   trackerCandidate: document.getElementById("tracker-candidate"),
   trackerMsk: document.getElementById("tracker-msk"),
@@ -44,7 +44,7 @@ function validateTablesSchema(data) {
     "pools",
     "sip_rules",
     "os_table",
-    "seasons",
+    "tations",
     "objective_catalog",
     "random_flavor_tables",
     "narrative_resolution"
@@ -60,8 +60,8 @@ function validateTablesSchema(data) {
     }
   });
 
-  if (!Array.isArray(data.seasons) || data.seasons.length === 0) {
-    errors.push("seasons must be a non-empty array.");
+  if (!Array.isArray(data.tations) || data.tations.length === 0) {
+    errors.push("tations must be a non-empty array.");
   }
 
   if (!Array.isArray(data.os_table) || data.os_table.length === 0) {
@@ -91,23 +91,23 @@ function validateTablesSchema(data) {
   }
 
   const objectiveCatalog = data.objective_catalog || {};
-  const seasonIds = new Set((data.seasons || []).map((season) => season.id));
+  const tationIds = new Set((data.tations || []).map((tation) => tation.id));
   const objectiveIds = new Set();
 
-  (data.seasons || []).forEach((season) => {
-    if (!Array.isArray(season.objectives)) {
-      errors.push(`Season ${season.id} must define objectives as an array.`);
+  (data.tations || []).forEach((tation) => {
+    if (!Array.isArray(tation.objectives)) {
+      errors.push(`Station ${tation.id} must define objectives as an array.`);
       return;
     }
 
-    season.objectives.forEach((objectiveId) => {
+    tation.objectives.forEach((objectiveId) => {
       if (objectiveIds.has(objectiveId)) {
-        errors.push(`Duplicate objective ID in seasons: ${objectiveId}`);
+        errors.push(`Duplicate objective ID in tations: ${objectiveId}`);
       }
       objectiveIds.add(objectiveId);
 
       if (!objectiveCatalog[objectiveId]) {
-        errors.push(`Objective referenced in seasons but missing in objective_catalog: ${objectiveId}`);
+        errors.push(`Objective referenced in tations but missing in objective_catalog: ${objectiveId}`);
       }
     });
   });
@@ -118,8 +118,8 @@ function validateTablesSchema(data) {
       return;
     }
 
-    if (!objective.season_id || !seasonIds.has(objective.season_id)) {
-      errors.push(`Objective ${objectiveId} has invalid season_id.`);
+    if (!objective.tation_id || !tationIds.has(objective.tation_id)) {
+      errors.push(`Objective ${objectiveId} has invalid tation_id.`);
     }
 
     if (!objective.symbol || !objective.name) {
@@ -217,7 +217,7 @@ function renderTracker() {
   }
 
   if (state.characterCreation?.pending) {
-    el.trackerSeason.textContent = "Character Creation";
+    el.trackerStation.textContent = "Character Creation";
     el.trackerMsk.textContent = state.pools.msk ?? "-";
     el.trackerSns.textContent = state.pools.sns ?? "-";
     el.trackerLog.textContent = state.pools.log ?? "-";
@@ -233,9 +233,9 @@ function renderTracker() {
 
   const objectiveId = state.currentObjectiveId;
   const objective = objectiveId ? tables.objective_catalog[objectiveId] : null;
-  const season = objective ? tables.seasons.find((entry) => entry.id === objective.season_id) : null;
+  const tation = objective ? tables.tations.find((entry) => entry.id === objective.tation_id) : null;
 
-  el.trackerSeason.textContent = season ? season.label : "-";
+  el.trackerStation.textContent = tation ? tation.label : "-";
   el.trackerLoop.textContent = `${state.loopCount}`;
   el.trackerCandidate.textContent = state.playerName || "-";
   el.trackerMsk.textContent = state.pools.msk ?? "-";

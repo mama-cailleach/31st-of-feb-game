@@ -103,7 +103,7 @@
       "effect": "system failure"
     }
   ],
-  "seasons": [
+  "tations": [
     {
       "id": "awakening",
       "label": "Awakening",
@@ -133,7 +133,7 @@
     "D": {
       "symbol": "D",
       "name": "Bed",
-      "season_id": "awakening",
+      "tation_id": "awakening",
       "default_pool": "sns",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -149,7 +149,7 @@
     "O": {
       "symbol": "O",
       "name": "Mirror",
-      "season_id": "awakening",
+      "tation_id": "awakening",
       "default_pool": "msk",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -165,7 +165,7 @@
     "W": {
       "symbol": "W",
       "name": "Fuel",
-      "season_id": "awakening",
+      "tation_id": "awakening",
       "default_pool": "sns",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -181,7 +181,7 @@
     "G": {
       "symbol": "G",
       "name": "Connection",
-      "season_id": "commute",
+      "tation_id": "commute",
       "default_pool": "log",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -197,7 +197,7 @@
     "L": {
       "symbol": "L",
       "name": "Interaction",
-      "season_id": "commute",
+      "tation_id": "commute",
       "default_pool": "msk",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -213,7 +213,7 @@
     "Y": {
       "symbol": "Y",
       "name": "Environment",
-      "season_id": "commute",
+      "tation_id": "commute",
       "default_pool": "sns",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -229,7 +229,7 @@
     "S": {
       "symbol": "S",
       "name": "Situation",
-      "season_id": "interview",
+      "tation_id": "interview",
       "default_pool": "log",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -245,7 +245,7 @@
     "T": {
       "symbol": "T",
       "name": "Task",
-      "season_id": "interview",
+      "tation_id": "interview",
       "default_pool": "log",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -261,7 +261,7 @@
     "A": {
       "symbol": "A",
       "name": "Action",
-      "season_id": "interview",
+      "tation_id": "interview",
       "default_pool": "msk",
       "pool_options": ["msk", "sns", "log"],
       "prompt_die": "d6",
@@ -277,7 +277,7 @@
     "R": {
       "symbol": "R",
       "name": "Result",
-      "season_id": "interview",
+      "tation_id": "interview",
       "special_check": "d100_plus_d100_below_stability",
       "result_check_mode": "below_stability_is_glitch",
       "rules_text": "Roll d100 (Player) + d100 (The OS). Below current Stability glitches; equal or above is safe."
@@ -285,7 +285,7 @@
     "B": {
       "symbol": "B",
       "name": "Commute Back",
-      "season_id": "return",
+      "tation_id": "return",
       "default_pool": "sns",
       "pool_options": ["msk", "sns", "log"],
       "exhaustion_applies": true,
@@ -302,7 +302,7 @@
     "U": {
       "symbol": "U",
       "name": "Recharge",
-      "season_id": "return",
+      "tation_id": "return",
       "special_check": "d100_recharge",
       "recharge_mode": "if_roll_higher_set_next_loop_battery",
       "rules_text": "Roll d100 at loop end. If the roll is higher than current Battery, next-loop Battery becomes that roll."
@@ -310,7 +310,7 @@
     "M": {
       "symbol": "M",
       "name": "Receipt Printing",
-      "season_id": "return",
+      "tation_id": "return",
       "special_check": "loop_receipt_summary",
       "rules_text": "Record loop summary with final Battery, final Stability, total Successes, and total Glitches."
     }
