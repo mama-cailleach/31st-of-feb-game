@@ -14,7 +14,7 @@ const el = {
   objective: document.getElementById("stat-objective"),
   osDie: document.getElementById("tracker-os-die"),
   mode: document.getElementById("stat-mode"),
-  trackerStation: document.getElementById("tracker-tation"),
+  trackerStation: document.getElementById("tracker-station"),
   trackerLoop: document.getElementById("tracker-loop"),
   trackerCandidate: document.getElementById("tracker-candidate"),
   trackerMsk: document.getElementById("tracker-msk"),
@@ -44,7 +44,7 @@ function validateTablesSchema(data) {
     "pools",
     "sip_rules",
     "os_table",
-    "tations",
+    "stations",
     "objective_catalog",
     "random_flavor_tables",
     "narrative_resolution"
@@ -60,8 +60,8 @@ function validateTablesSchema(data) {
     }
   });
 
-  if (!Array.isArray(data.tations) || data.tations.length === 0) {
-    errors.push("tations must be a non-empty array.");
+  if (!Array.isArray(data.stations) || data.stations.length === 0) {
+    errors.push("stations must be a non-empty array.");
   }
 
   if (!Array.isArray(data.os_table) || data.os_table.length === 0) {
@@ -91,23 +91,23 @@ function validateTablesSchema(data) {
   }
 
   const objectiveCatalog = data.objective_catalog || {};
-  const tationIds = new Set((data.tations || []).map((tation) => tation.id));
+  const tationIds = new Set((data.stations || []).map((station) => station.id));
   const objectiveIds = new Set();
 
-  (data.tations || []).forEach((tation) => {
-    if (!Array.isArray(tation.objectives)) {
-      errors.push(`Station ${tation.id} must define objectives as an array.`);
+  (data.stations || []).forEach((station) => {
+    if (!Array.isArray(station.objectives)) {
+      errors.push(`Station ${station.id} must define objectives as an array.`);
       return;
     }
 
-    tation.objectives.forEach((objectiveId) => {
+    station.objectives.forEach((objectiveId) => {
       if (objectiveIds.has(objectiveId)) {
-        errors.push(`Duplicate objective ID in tations: ${objectiveId}`);
+        errors.push(`Duplicate objective ID in stations: ${objectiveId}`);
       }
       objectiveIds.add(objectiveId);
 
       if (!objectiveCatalog[objectiveId]) {
-        errors.push(`Objective referenced in tations but missing in objective_catalog: ${objectiveId}`);
+        errors.push(`Objective referenced in stations but missing in objective_catalog: ${objectiveId}`);
       }
     });
   });
@@ -118,8 +118,8 @@ function validateTablesSchema(data) {
       return;
     }
 
-    if (!objective.tation_id || !tationIds.has(objective.tation_id)) {
-      errors.push(`Objective ${objectiveId} has invalid tation_id.`);
+    if (!objective.station_id || !tationIds.has(objective.station_id)) {
+      errors.push(`Objective ${objectiveId} has invalid station_id.`);
     }
 
     if (!objective.symbol || !objective.name) {
@@ -202,7 +202,10 @@ function renderStatus() {
   el.battery.textContent = `${state.battery}%`;
   el.stability.textContent = `${state.stability}%`;
   el.sip.textContent = String(state.sip);
-  el.objective.textContent = state.currentObjectiveId || "-";
+  const objectiveName = state.currentObjectiveId
+    ? tables?.objective_catalog?.[state.currentObjectiveId]?.name
+    : null;
+  el.objective.textContent = objectiveName || "-";
   const osBand = tables?.os_table?.find(
     (band) => state.stability >= band.min_stability && state.stability <= band.max_stability
   );
@@ -222,10 +225,10 @@ function renderTracker() {
     el.trackerSns.textContent = state.pools.sns ?? "-";
     el.trackerLog.textContent = state.pools.log ?? "-";
     if (state.characterCreation.stage === "name") {
-      el.trackerLoop.textContent = "1/2";
+      el.trackerLoop.textContent = "-";
       el.trackerCandidate.textContent = "Enter your name";
     } else {
-      el.trackerLoop.textContent = "2/2";
+      el.trackerLoop.textContent = "-";
       el.trackerCandidate.textContent = `${state.playerName || "Candidate"} - Choose archetype`;
     }
     return;
@@ -233,9 +236,9 @@ function renderTracker() {
 
   const objectiveId = state.currentObjectiveId;
   const objective = objectiveId ? tables.objective_catalog[objectiveId] : null;
-  const tation = objective ? tables.tations.find((entry) => entry.id === objective.tation_id) : null;
+  const station = objective ? tables.stations.find((entry) => entry.id === objective.station_id) : null;
 
-  el.trackerStation.textContent = tation ? tation.label : "-";
+  el.trackerStation.textContent = station ? station.label : "-";
   el.trackerLoop.textContent = `${state.loopCount}`;
   el.trackerCandidate.textContent = state.playerName || "-";
   el.trackerMsk.textContent = state.pools.msk ?? "-";

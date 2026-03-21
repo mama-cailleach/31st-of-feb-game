@@ -42,7 +42,7 @@ Then open:
 - Character creation with name input followed by archetype selection: **Social Camouflage** (MSK 3, SNS 1, LOG 2), **System Strategist** (MSK 1, SNS 2, LOG 3), or **Tension Runner** (MSK 2, SNS 3, LOG 1).
 - SIP spend command (`sip spend`) arms an OS-negation for the next pool check.
 - Schema validation runs at boot and blocks play with explicit error output if `tables.json` is malformed.
-- In-app objective tracker shows tation, step index, and completed objective IDs.
+- In-app objective tracker shows station, step index, and completed objective IDs.
 
 ## Notes on manual dice mode
 

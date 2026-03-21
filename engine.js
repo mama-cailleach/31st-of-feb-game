@@ -28,11 +28,11 @@ function rollOsModifier(osTable, stability) {
   };
 }
 
-function flattenObjectiveOrder(tations) {
-  return tations
+function flattenObjectiveOrder(stations) {
+  return stations
     .slice()
     .sort((a, b) => a.order - b.order)
-    .flatMap((tation) => tation.objectives);
+    .flatMap((station) => station.objectives);
 }
 
 function parseAction(input) {
@@ -170,14 +170,14 @@ function nextObjective(state, tables, lines) {
   const objectiveId = state.objectiveOrder[state.objectiveIndex];
   const objective = tables.objective_catalog[objectiveId];
   state.currentObjectiveId = objectiveId;
-  const tation = tables.tations.find((entry) => entry.id === objective.tation_id);
+  const station = tables.stations.find((entry) => entry.id === objective.station_id);
 
-  // Detect tation change and reset pool usage tracker
-  if (state.currentStationId !== objective.tation_id) {
-    state.currentStationId = objective.tation_id;
+  // Detect station change and reset pool usage tracker
+  if (state.currentStationId !== objective.station_id) {
+    state.currentStationId = objective.station_id;
     state.rolledPoolsThisStation = [];
 
-    const objectiveNames = (tation?.objectives || [])
+    const objectiveNames = (station?.objectives || [])
       .map((id) => tables.objective_catalog[id]?.name)
       .filter(Boolean)
       .join(", ");
@@ -185,7 +185,7 @@ function nextObjective(state, tables, lines) {
 
     lines.push("");
     lines.push("----------------");
-    lines.push(`Station: ${tation?.label || objective.tation_id}`);
+    lines.push(`Station: ${station?.label || objective.station_id}`);
     lines.push(`Objectives: ${objectiveNames || "-"}`);
     lines.push(`Prompt: ${tationPrompt}`);
     lines.push("----------------");
@@ -313,7 +313,7 @@ function nextObjective(state, tables, lines) {
   );
 
   if (availablePools.length === 0) {
-    lines.push("All pools have been used this tation.");
+    lines.push("All pools have been used this station.");
     state.objectiveIndex += 1;
     const next = nextObjective(state, tables, lines);
     return next;
@@ -471,7 +471,7 @@ function resolvePoolRoll(state, tables, pool, manualPlayerDice) {
     lines.push(`Glitch prompt: ${glitchFlavor}`);
   }
 
-  // Mark this pool as used this tation
+  // Mark this pool as used this station
   state.rolledPoolsThisStation.push(pool);
 
   applyObjectiveCost(state, tables);
@@ -582,7 +582,7 @@ export function newGame(tables) {
     sip: tables.sip_rules.start,
     sipNegateNextOs: false,
     loopCount: 1,
-    objectiveOrder: flattenObjectiveOrder(tables.tations),
+    objectiveOrder: flattenObjectiveOrder(tables.stations),
     objectiveIndex: 0,
     currentObjectiveId: null,
     currentStationId: null,
