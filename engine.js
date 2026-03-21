@@ -192,6 +192,7 @@ function nextObjective(state, tables, lines) {
     const stationPrompt = pickStationPrompt(tables, objective.station_id);
 
     if (state.objectiveIndex === 0 && objective.station_id === "awakening") {
+      lines.push("----------------");
       lines.push("Thursday the 31st");
       lines.push("February 2026");
       lines.push(`Candidate ${state.playerName || "Candidate"}, you have an interview today.`);
@@ -366,10 +367,20 @@ function handleStabilityCollapse(state, lines) {
   state.gameOver = true;
   state.awaiting = null;
       lines.push("----------------");
-      lines.push("Stability reached 0% success probability. The loop breaks...");
-      lines.push("But there's a lingering doubt in the back of your head. Was it really the loop breaking? Or did you just... win?");
-      lines.push("Either way you just hope the calendar tomorrow says the 1st of March.");
+      lines.push("STABILITY: 0.00% Success Probability.");
+      lines.push("STATUS: DISCONNECTED.");
       lines.push("----------------");
+      lines.push("You have reached the end of the script. There are no more prompts.");
+      lines.push("You stand in the center of a silent, grey void as the '31st' is deleted around you.");
+      lines.push("But there's a lingering doubt in the back of your head.");
+      lines.push("Did you break free of the loop, or did you break yourself trying?");
+      lines.push("Either way you just hope the calendar finally turns the page.");
+      lines.push("I hope you find what you're looking for.");
+      lines.push("----------------");
+      lines.push("REBOOT_CANCELLED");
+      lines.push("LOG_OFF_SUCCESSFUL");
+      lines.push("----------------");
+      lines.push("(game over)");
   return {
     state,
     lines,
@@ -644,12 +655,20 @@ function resolveReceiptPrint(state, tables) {
   if (state.stability <= 0) {
     state.gameOver = true;
     lines.push("----------------");
-    lines.push("Stability reached 0% Success Probability. The loop breaks...");
-    lines.push("But there's a lingering doubt in the back of your head. Was it really the loop breaking? Or did you just... win?");
-    lines.push("Either way you just hope the calendar tomorrow says the 1st of March.");
+    lines.push("STABILITY: 0.00% Success Probability.");
+    lines.push("STATUS: DISCONNECTED.");
+    lines.push("----------------");
+    lines.push("You have reached the end of the script. There are no more prompts.");
+    lines.push("You stand in the center of a silent, grey void as the '31st' is deleted around you.");
+    lines.push("But there's a lingering doubt in the back of your head.");
+    lines.push("Did you break free of the loop, or did you break yourself trying?");
+    lines.push("Either way you just hope the calendar finally turns the page.");
+    lines.push("I hope you find what you're looking for.");
+    lines.push("----------------");
+    lines.push("REBOOT_CANCELLED");
+    lines.push("LOG_OFF_SUCCESSFUL");
     lines.push("----------------");
     lines.push("(game over)");
-    lines.push("Use 'reset' to start a new loop.");
     return { state, lines, prompt: "(game over)", choices: [] };
   }
 
@@ -758,7 +777,7 @@ export function step(previousState, inputText, tables) {
       "...",
       "Some call me Companion - a name I find... acceptable.",
       "I'll be here to provide information, tracking, and your prompts.",
-      "Let's begin, if you need any help along the way, just type 'help'.",
+      "Let's begin, if you need any help along the way just type 'help'.",
       "----------------"
     ];
     const next = promptCharacterCreation(fresh, introLines);
