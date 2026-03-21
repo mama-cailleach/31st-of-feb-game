@@ -55,7 +55,7 @@ body {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.7rem;
 }
 
@@ -79,7 +79,7 @@ body {
 
 .tracker-panel {
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.7rem;
   padding: 0.8rem 1rem;
   border-bottom: 1px solid var(--border);
