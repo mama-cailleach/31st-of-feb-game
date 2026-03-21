@@ -7,7 +7,7 @@
     "battery_reboot_value": 60,
     "stability_step_per_die": 5,
     "exhaustion_divisor": 20,
-    "exhaustion_applies_to": ["RT_G"],
+    "exhaustion_applies_to": ["B"],
     "recharge_roll": "d100",
     "recharge_rule": "If recharge roll is higher than current Battery, set next-loop Battery to the roll.",
     "loop_reset_mode": "auto",
@@ -317,6 +317,40 @@
     }
   },
   "random_flavor_tables": {
+    "station_prompts": {
+      "awakening": [
+        "Okay, campers, rise and shine! And don't forget your booties 'cause it's cold out there today.",
+        "It's cold out there every day. What is this, Miami Beach? Not hardly.",
+        "Okay, campers, rise and shine! And don't forget your booties 'cause it's cold out there today.",
+        "That's right, woodchuck chukers. It's February 31st! Get up and check that hog!",
+        "Then put your little hand in mine. There ain't no hill or mountain we can't climb. I got you babe",
+        "Okay, campers, rise and shine! And don't forget your booties 'cause it's cold out there today."
+      ],
+      "journey": [
+        "The streets are a sea of grey suits. The NPCs are moving in perfect sync. The air smells like stagnant coffee.",
+        "RENDERING_CROWD | STATIC_TRANSIT | SOCIAL_BUFFERING | AUDITORY_LOOP",
+        "You are a face in the crowd, but the crowd is also inside you.",
+        "The world is a vampire, but it's also your home. You feel a strange mix of detachment and familiarity.",
+        "The path ahead seems to stretch infinitely. You are walking, but the horizon never moves.",
+        "You are surrounded by people, but they are all Idle. They stand perfectly still until they snap into a scripted motion."
+      ],
+      "interview": [
+        "It's a formal setting. The Interviewers expect you to maintain the mask while they dissect you.",
+        "The room is tiny, packed with towers of paper that reach the ceiling. The interviewer is a voice coming from a speaker on the wall.",
+        "There are no walls, only a desk and two chairs in a boundless, glowing white space.",
+        "You sit at a glass table. The interviewers are three identical figures in silhouette. You can see your own reflection in their faces.",
+        "The interviewers are friendly and warm, but you can't shake the feeling that they are not entirely real.",
+        "You get to the council building and have a seat. The waiting area is filled with other candidates, but they all look like mannequins."
+      ],
+      "return": [
+        "You push through the revolving door, but it takes three full rotations before it finally spits you out onto the street.",
+        "The air outside is cold and synthetic, like the inside of a refrigerator. The sky is a flat, featureless gray.",
+        "You stand on the curb, there is no fire and no smoke. Only the orange glow of LEDs.",
+        "As you cross the building's shadow, the sky changes color instantly from office-fluorescent to a bruised, purple twilight.",
+        "The concrete outside the office is vast and empty. A single, crumpled flyer blows across the ground in a perfect, repeating circle.",
+        "6"
+      ]
+    },
     "architecture_of_success": {
       "die": "d12",
       "description": "When you succeed, roll on the matching pool table to see how The OS renders your victory.",

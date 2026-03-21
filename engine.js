@@ -49,7 +49,15 @@ function pickPrompt(objective) {
   return objective.prompts[Math.floor(Math.random() * objective.prompts.length)];
 }
 
-const SEASON_PROMPT_PLACEHOLDERS = ["1", "2", "3", "4", "5", "6"];
+function pickStationPrompt(tables, stationId) {
+  const stationPromptTables = tables.random_flavor_tables?.station_prompts;
+  const key = stationId === "commute" ? "journey" : stationId;
+  const prompts = stationPromptTables?.[key];
+  if (!Array.isArray(prompts) || prompts.length === 0) {
+    return "-";
+  }
+  return prompts[rollDie(prompts.length) - 1];
+}
 
 function buildCreationChoices(lines) {
   if (Array.isArray(lines)) {
@@ -181,7 +189,7 @@ function nextObjective(state, tables, lines) {
       .map((id) => tables.objective_catalog[id]?.name)
       .filter(Boolean)
       .join(", ");
-    const stationPrompt = SEASON_PROMPT_PLACEHOLDERS[rollDie(6) - 1];
+    const stationPrompt = pickStationPrompt(tables, objective.station_id);
 
     if (state.objectiveIndex === 0 && objective.station_id === "awakening") {
       lines.push("Thursday the 31st");
@@ -504,9 +512,11 @@ function resolveCommuteRoll(state, tables, manualPlayerDice) {
 
   if (success) {
     const commuteTable = tables.random_flavor_tables?.commute_back_success?.entries;
-    const fallback = ["1", "2", "3", "4", "5", "6"];
-    const entries = Array.isArray(commuteTable) && commuteTable.length > 0 ? commuteTable : fallback;
-    lines.push(`Success prompt: ${entries[rollDie(entries.length) - 1]}`);
+    if (Array.isArray(commuteTable) && commuteTable.length > 0) {
+      lines.push(`Success prompt: ${commuteTable[rollDie(commuteTable.length) - 1]}`);
+    } else {
+      lines.push("Success prompt: -");
+    }
   } else {
     const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
     lines.push(`${glitchFlavor}`);
