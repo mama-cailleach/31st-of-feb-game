@@ -391,12 +391,36 @@
         "STUTTER-STEP: You are stuck in a walking animation but are not moving.",
         "THE MONITOR: You see a giant, pixelated eye watching from a window.",
         "DATA BLEED: Fragments of another candidate's memory overlay your own for a moment.",
-        "KERNEL PANIC: The scene freezes, alarms blare, and the loop hard-resets with no transition."
+        "KERNEL PANIC: The scene freezes, alarms blare, and the system hard-resets to where you were."
       ]
     },
     "commute_back_success": {
       "die": "d6",
       "usage": "commute_back_success_flavor",
+      "entries": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ]
+    },
+    "recharge_prompts": {
+      "die": "d6",
+      "usage": "recharge_prompt_flavor",
+      "entries": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ]
+    },
+    "receipt_print_prompts": {
+      "die": "d6",
+      "usage": "receipt_print_prompt_flavor",
       "entries": [
         "1",
         "2",

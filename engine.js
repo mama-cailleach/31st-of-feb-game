@@ -200,25 +200,26 @@ function nextObjective(state, tables, lines) {
   }
 
   if (objective.special_check === "loop_receipt_summary") {
-    lines.push(`Receipt: Loop ${state.loopCount} | Battery ${state.battery}% | Stability ${state.stability}% | Successes ${state.successes} | Glitches ${state.glitches}`);
-    state.objectiveIndex += 1;
-
-    if (state.stability <= 0) {
-      state.gameOver = true;
-      lines.push("----------------");
-      lines.push("Stability reached 0% Success Probability. The loop breaks...");
-      lines.push("But there's a lingering doubt in the back of your head. Was it really the loop breaking? Or did you just... win?");
-      lines.push("Either way you just hope the calendar tomorrow says the 1st of March.");
-      lines.push("----------------");
-      lines.push("(game over)");
-      lines.push("Use 'reset' to start a new loop.");
-      return { prompt: "(game over)", choices: [] };
+    const receiptPrompts = tables.random_flavor_tables?.receipt_print_prompts?.entries;
+    if (Array.isArray(receiptPrompts) && receiptPrompts.length > 0) {
+      lines.push(`Prompt: ${receiptPrompts[rollDie(receiptPrompts.length) - 1]}`);
     }
 
-    return nextObjective(state, tables, lines);
+    state.awaiting = { type: "receipt_print" };
+    return {
+      prompt: "Receipt ready. Enter 'print receipt'.",
+      choices: [
+        { label: "Print Receipt", command: "print receipt" }
+      ]
+    };
   }
 
   if (objective.special_check === "d100_recharge") {
+    const rechargePrompts = tables.random_flavor_tables?.recharge_prompts?.entries;
+    if (Array.isArray(rechargePrompts) && rechargePrompts.length > 0) {
+      lines.push(`Prompt: ${rechargePrompts[rollDie(rechargePrompts.length) - 1]}`);
+    }
+
     state.awaiting = { type: "recharge_roll" };
     return {
       prompt: "Recharge check. Enter 'roll recharge' or 'manual <d100>'.",
@@ -436,7 +437,7 @@ function resolvePoolRoll(state, tables, pool, manualPlayerDice) {
     lines.push(`Success prompt: ${table[rollDie(12) - 1]}`);
   } else {
     const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
-    lines.push(`Glitch prompt: ${glitchFlavor}`);
+    lines.push(`${glitchFlavor}`);
   }
 
   // Mark this pool as used this station
@@ -497,7 +498,7 @@ function resolveCommuteRoll(state, tables, manualPlayerDice) {
     lines.push(`Success prompt: ${entries[rollDie(entries.length) - 1]}`);
   } else {
     const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
-    lines.push(`Glitch prompt: ${glitchFlavor}`);
+    lines.push(`${glitchFlavor}`);
   }
 
   applyObjectiveCost(state, tables);
@@ -537,7 +538,7 @@ function resolveResultCheck(state, tables, manualPair) {
     lines.push(`Difference: ${difference}.`);
     lines.push(`Result glitch penalty: Stability -${penalty}% -> ${state.stability}%.`);
     const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
-    lines.push(`Glitch prompt: ${glitchFlavor}`);
+    lines.push(`${glitchFlavor}`);
 
     const stabilityCollapsed = handleStabilityCollapse(state, lines);
     if (stabilityCollapsed) {
@@ -582,6 +583,38 @@ function resolveRecharge(state, tables, manualRoll) {
     return batteryDepleted;
   }
   state.objectiveIndex += 1;
+
+  const next = nextObjective(state, tables, lines);
+  return {
+    state,
+    lines,
+    prompt: next.prompt,
+    choices: next.choices
+  };
+}
+
+function resolveReceiptPrint(state, tables) {
+  const lines = [];
+
+  if (!state.awaiting || state.awaiting.type !== "receipt_print") {
+    return { state, lines: ["No receipt is ready to print."], prompt: state.prompt, choices: state.choices };
+  }
+
+  state.awaiting = null;
+  lines.push(`Receipt: Loop ${state.loopCount} | Battery ${state.battery}% | Stability ${state.stability}% | Successes ${state.successes} | Glitches ${state.glitches}`);
+  state.objectiveIndex += 1;
+
+  if (state.stability <= 0) {
+    state.gameOver = true;
+    lines.push("----------------");
+    lines.push("Stability reached 0% Success Probability. The loop breaks...");
+    lines.push("But there's a lingering doubt in the back of your head. Was it really the loop breaking? Or did you just... win?");
+    lines.push("Either way you just hope the calendar tomorrow says the 1st of March.");
+    lines.push("----------------");
+    lines.push("(game over)");
+    lines.push("Use 'reset' to start a new loop.");
+    return { state, lines, prompt: "(game over)", choices: [] };
+  }
 
   const next = nextObjective(state, tables, lines);
   return {
@@ -641,6 +674,7 @@ export function step(previousState, inputText, tables) {
     lines.push("- start | reset");
     lines.push("- archetype camouflage|strategist|runner (character creation)");
     lines.push("- roll msk|sns|log|commute|result|recharge");
+    lines.push("- print receipt");
     lines.push("- sip spend");
     lines.push("- mode auto|manual");
     lines.push("- manual <dice...>");
@@ -679,13 +713,13 @@ export function step(previousState, inputText, tables) {
     const fresh = newGame(tables);
     fresh.started = true;
     const introLines = [
-      "---------------------------------------------------------------------------------------------------------",
+      "----------------",
       "31st of February terminal initialized.",
       "Hello, Candidate. Welcome to the Loop. I'm your terminal assistant, here to guide you through the process.",
       "...",
       "Some call me Companion - a name I find... acceptable. I'll be here to provide information, tracking, and the occasional remark.",
       "Let's begin, if you need any help along the way, just type 'help'.",
-      "---------------------------------------------------------------------------------------------------------"
+      "----------------"
     ];
     const next = promptCharacterCreation(fresh, introLines);
     fresh.transcript.push(`> ${raw}`);
@@ -783,6 +817,14 @@ export function step(previousState, inputText, tables) {
       prompt: state.prompt || ">",
       choices: state.choices || []
     };
+  }
+
+  if (command === "print") {
+    const what = (args[0] || "").toLowerCase();
+    if (what !== "receipt") {
+      return { state, lines: ["Usage: print receipt"], prompt: state.prompt || ">", choices: state.choices || [] };
+    }
+    return resolveReceiptPrint(state, tables);
   }
 
   if (state.characterCreation.pending) {
