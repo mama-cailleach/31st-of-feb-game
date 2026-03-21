@@ -49,11 +49,26 @@ function pickPrompt(objective) {
   return objective.prompts[Math.floor(Math.random() * objective.prompts.length)];
 }
 
-function buildCreationChoices(state) {
+function buildCreationChoices(lines) {
+  if (Array.isArray(lines)) {
+    lines.push("Social Camouflage (MSK 3, SNS 1, LOG 2)");
+    lines.push("System Strategist (MSK 1, SNS 2, LOG 3)");
+    lines.push("Tension Runner (MSK 2, SNS 3, LOG 1)");
+  }
+
   return [
-    { label: "Social Camouflage (MSK 3, SNS 1, LOG 2)", command: "archetype camouflage" },
-    { label: "System Strategist (MSK 1, SNS 2, LOG 3)", command: "archetype strategist" },
-    { label: "Tension Runner (MSK 2, SNS 3, LOG 1)", command: "archetype runner" }
+    { label: "Social Camouflage", command: "archetype camouflage" },
+    { label: "System Strategist", command: "archetype strategist" },
+    { label: "Tension Runner", command: "archetype runner" }
+  ];
+}
+
+function buildNameChoices() {
+  return [
+    { label: "RED", command: "RED" },
+    { label: "BLUE", command: "BLUE" },
+    { label: "ASH", command: "ASH" },
+    { label: "GARY", command: "GARY" }
   ];
 }
 
@@ -61,7 +76,7 @@ function promptNameInput(state, lines) {
   lines.push("What is your name, Candidate?");
   return {
     prompt: "Enter your name:",
-    choices: []
+    choices: buildNameChoices()
   };
 }
 
@@ -88,7 +103,7 @@ function submitName(state, tables, name) {
     state,
     lines,
     prompt: "Select an archetype:",
-    choices: buildCreationChoices(state)
+    choices: buildCreationChoices(lines)
   };
 }
 
@@ -99,7 +114,7 @@ function promptCharacterCreation(state, lines) {
   lines.push("Choose your archetype:");
   return {
     prompt: "Select an archetype:",
-    choices: buildCreationChoices(state)
+    choices: buildCreationChoices(lines)
   };
 }
 
@@ -363,9 +378,11 @@ function handleStabilityCollapse(state, lines) {
 
   state.gameOver = true;
   state.awaiting = null;
-  lines.push("----------------");
-  lines.push("STABILITY COLLAPSE: 0%. The loop breaks. You are free.");
-  lines.push("----------------");
+      lines.push("----------------");
+      lines.push("Stability reached 0% success probability. The loop breaks...");
+      lines.push("But there's a lingering doubt in the back of your head. Was it really the loop breaking? Or did you just... win?");
+      lines.push("Either way you just hope the calendar tomorrow says the 1st of March.");
+      lines.push("----------------");
   return {
     state,
     lines,
@@ -468,6 +485,20 @@ function resolveResultCheck(state, tables, manualPair) {
 
   if (glitch) {
     state.glitches += 1;
+    const penalty = 20;
+    state.stability = clamp(
+      state.stability - penalty,
+      tables.core_rules.stability_floor,
+      tables.core_rules.stability_ceiling
+    );
+    lines.push(`Result glitch penalty: Stability -${penalty}% -> ${state.stability}%.`);
+    const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
+    lines.push(`Glitch prompt: ${glitchFlavor}`);
+
+    const stabilityCollapsed = handleStabilityCollapse(state, lines);
+    if (stabilityCollapsed) {
+      return stabilityCollapsed;
+    }
   } else {
     state.successes += 1;
   }

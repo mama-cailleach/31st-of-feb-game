@@ -131,8 +131,6 @@ body {
   gap: 0.5rem;
   flex-wrap: wrap;
   padding: 0 1rem 0.85rem;
-  max-height: 8rem;
-  overflow-y: auto;
 }
 
 .choice-btn {

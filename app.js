@@ -319,7 +319,8 @@ async function boot() {
 
   state = newGame(tables);
   await renderLines([
-    "31st of February terminal scaffold ready.",
+    "Terminal ready...",
+    "Choose an option below or type a command to get started.",
     "Type 'start' to begin or 'help' for commands."
   ]);
   renderChoices([
