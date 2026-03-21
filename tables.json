@@ -278,9 +278,9 @@
       "symbol": "R",
       "name": "Result",
       "station_id": "interview",
-      "special_check": "d100_plus_d100_below_stability",
-      "result_check_mode": "below_stability_is_glitch",
-      "rules_text": "Roll d100 (Player) + d100 (The OS). Below current Stability glitches; equal or above is safe."
+      "special_check": "result_single_d100_tiered_penalty",
+      "result_check_mode": "single_d100_tiered_stability_penalty",
+      "rules_text": "Roll one d100 (Player). If equal or above current Stability, no penalty. If below, apply -10% Stability when the difference is under 50; otherwise apply -20% Stability."
     },
     "B": {
       "symbol": "B",
@@ -289,6 +289,7 @@
       "default_pool": "sns",
       "pool_options": ["msk", "sns", "log"],
       "exhaustion_applies": true,
+      "rules_text": "Roll Commute using battery-based dice: 100%=6d6, 81-99%=5d6, 61-80%=4d6, 41-60%=3d6, 21-40%=2d6, 1-20%=1d6.",
       "prompt_die": "d6",
       "prompts": [
         "You replay every sentence and cannot stop auditing.",
@@ -296,7 +297,7 @@
         "A delay forces unplanned contact.",
         "You find silence and your nervous system descends one level.",
         "You doom-scroll and consume your remaining focus.",
-        "You choose stillness over stimulation and recover slightly."
+        "You choose stillness over stimulation to recover slightly."
       ]
     },
     "U": {
@@ -391,6 +392,18 @@
         "THE MONITOR: You see a giant, pixelated eye watching from a window.",
         "DATA BLEED: Fragments of another candidate's memory overlay your own for a moment.",
         "KERNEL PANIC: The scene freezes, alarms blare, and the loop hard-resets with no transition."
+      ]
+    },
+    "commute_back_success": {
+      "die": "d6",
+      "usage": "commute_back_success_flavor",
+      "entries": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
       ]
     },
     "battery_zero_events": {

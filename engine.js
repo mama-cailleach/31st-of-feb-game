@@ -228,83 +228,32 @@ function nextObjective(state, tables, lines) {
     };
   }
 
-  if (objective.special_check === "d100_plus_d100_below_stability") {
+  if (objective.special_check === "result_single_d100_tiered_penalty") {
     state.awaiting = { type: "result_check" };
     return {
-      prompt: "Result check. Enter 'roll result' or 'manual <player_d100> <os_d100>'.",
+      prompt: "Result check. Enter 'roll result' or 'manual <d100>'.",
       choices: [
         { label: "Roll Result", command: "roll result" }
       ]
     };
   }
 
-  // Auto-roll all pools for Commute Back objective.
+  // Commute Back objective uses one player-triggered roll.
   if (objective.exhaustion_applies) {
-    const lines2 = [];
-    const poolsToRoll = objective.pool_options || ["msk", "sns", "log"];
-    
-    for (const pool of poolsToRoll) {
-      let diceCount = state.pools[pool];
-      if (objective.exhaustion_applies) {
-        const cap = Math.max(1, Math.ceil(state.battery / tables.core_rules.exhaustion_divisor));
-        diceCount = Math.min(diceCount, cap);
-        lines2.push(`${pool.toUpperCase()} exhaustion cap: max ${cap}d6, rolling ${diceCount}d6.`);
-      }
-      
-      const playerDice = Array.from({ length: diceCount }, () => rollDie(6));
-      const playerTotal = playerDice.reduce((sum, die) => sum + die, 0);
-      let os = rollOsModifier(tables.os_table, state.stability);
-      
-      const total = playerTotal + os.value;
-      const dc = tables.core_rules.dc;
-      const success = total >= dc;
-      
-      lines2.push(`Pool ${pool.toUpperCase()} roll: [${playerDice.join(", ")}] = ${playerTotal}`);
-      lines2.push(`OS die ${os.die}: ${os.value >= 0 ? "+" : ""}${os.value} (${os.effect})`);
-      lines2.push(`Total ${total} vs DC ${dc}: ${success ? "SUCCESS" : "GLITCH"}`);
-      lines2.push("----------------");
-      
-      applyStabilityDelta(state, tables, diceCount, success);
-      const stabilityCollapsed = handleStabilityCollapse(state, lines2);
-      if (stabilityCollapsed) {
-        return {
-          state,
-          lines: [...lines, ...stabilityCollapsed.lines],
-          prompt: stabilityCollapsed.prompt,
-          choices: stabilityCollapsed.choices
-        };
-      }
-      
-      if (success) {
-        const table = tables.random_flavor_tables.architecture_of_success.tables[pool];
-        lines2.push(`Success flavor: ${table[rollDie(12) - 1]}`);
-      } else {
-        const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
-        lines2.push(`Glitch: ${glitchFlavor}`);
-      }
-      lines2.push("----------------");
-      state.rolledPoolsThisStation.push(pool);
-      lines2.push("");
-    }
-    
-    applyObjectiveCost(state, tables);
-    const batteryDepleted = handleBatteryDepletion(state, tables, lines2);
-    if (batteryDepleted) {
-      return {
-        state,
-        lines: [...lines, ...batteryDepleted.lines],
-        prompt: batteryDepleted.prompt,
-        choices: batteryDepleted.choices
-      };
-    }
-    state.objectiveIndex += 1;
-    
-    const next = nextObjective(state, tables, lines2);
+    const diceCount = getCommuteDiceCount(state);
+    lines.push(`Pool of dice to roll: ${diceCount}d6`);
+
+    state.awaiting = {
+      type: "commute_roll",
+      objectiveId,
+      expectedDice: diceCount
+    };
+
     return {
-      state,
-      lines: [...lines, ...lines2],
-      prompt: next.prompt,
-      choices: next.choices
+      prompt: "Commute check. Enter 'roll commute' or 'manual <d6...>'.",
+      choices: [
+        { label: "Roll Commute", command: "roll commute" }
+      ]
     };
   }
 
@@ -421,6 +370,25 @@ function applyStabilityDelta(state, tables, playerDiceCount, success) {
   }
 }
 
+function getCommuteDiceCount(state) {
+  if (state.battery >= 100) {
+    return 6;
+  }
+  if (state.battery >= 81) {
+    return 5;
+  }
+  if (state.battery >= 61) {
+    return 4;
+  }
+  if (state.battery >= 41) {
+    return 3;
+  }
+  if (state.battery >= 21) {
+    return 2;
+  }
+  return 1;
+}
+
 function resolvePoolRoll(state, tables, pool, manualPlayerDice) {
   const lines = [];
   const objectiveId = state.currentObjectiveId;
@@ -490,25 +458,83 @@ function resolvePoolRoll(state, tables, pool, manualPlayerDice) {
   };
 }
 
+function resolveCommuteRoll(state, tables, manualPlayerDice) {
+  const lines = [];
+  const objectiveId = state.currentObjectiveId;
+  const objective = tables.objective_catalog[objectiveId];
+
+  if (!objective || !state.awaiting || state.awaiting.type !== "commute_roll") {
+    return { state, lines: ["No commute roll is currently expected."], prompt: state.prompt, choices: state.choices };
+  }
+
+  const diceCount = getCommuteDiceCount(state);
+  const playerDice = manualPlayerDice || Array.from({ length: diceCount }, () => rollDie(6));
+  const playerTotal = playerDice.reduce((sum, die) => sum + die, 0);
+  let os = rollOsModifier(tables.os_table, state.stability);
+  if (state.sipNegateNextOs) {
+    os = { value: 0, die: "SIP", effect: "OS roll negated", roll: 0 };
+    state.sipNegateNextOs = false;
+    lines.push("SIP override active: OS roll negated for this objective.");
+  }
+  const total = playerTotal + os.value;
+  const dc = tables.core_rules.dc;
+  const success = total >= dc;
+
+  lines.push(`Commute roll: [${playerDice.join(", ")}] = ${playerTotal}`);
+  lines.push(`OS die ${os.die}: ${os.value >= 0 ? "+" : ""}${os.value} (${os.effect})`);
+  lines.push(`Total ${total} vs DC ${dc}: ${success ? "SUCCESS" : "GLITCH"}`);
+
+  applyStabilityDelta(state, tables, diceCount, success);
+  const stabilityCollapsed = handleStabilityCollapse(state, lines);
+  if (stabilityCollapsed) {
+    return stabilityCollapsed;
+  }
+
+  if (success) {
+    const commuteTable = tables.random_flavor_tables?.commute_back_success?.entries;
+    const fallback = ["1", "2", "3", "4", "5", "6"];
+    const entries = Array.isArray(commuteTable) && commuteTable.length > 0 ? commuteTable : fallback;
+    lines.push(`Success prompt: ${entries[rollDie(entries.length) - 1]}`);
+  } else {
+    const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
+    lines.push(`Glitch prompt: ${glitchFlavor}`);
+  }
+
+  applyObjectiveCost(state, tables);
+  const batteryDepleted = handleBatteryDepletion(state, tables, lines);
+  if (batteryDepleted) {
+    return batteryDepleted;
+  }
+  state.objectiveIndex += 1;
+
+  const next = nextObjective(state, tables, lines);
+  return {
+    state,
+    lines,
+    prompt: next.prompt,
+    choices: next.choices
+  };
+}
+
 function resolveResultCheck(state, tables, manualPair) {
   const lines = [];
   const player = manualPair ? manualPair[0] : rollDie(100);
-  const os = manualPair ? manualPair[1] : rollDie(100);
-  const total = player + os;
-  const glitch = total < state.stability;
+  const stable = player >= state.stability;
 
-  lines.push(`Result check: Player ${player} + OS ${os} = ${total}`);
+  lines.push(`Result check: Player ${player}`);
   lines.push(`Current Stability: ${state.stability}`);
-  lines.push(glitch ? "Outcome: GLITCH (below Stability)." : "Outcome: Stable (equal/above Stability).");
+  lines.push(stable ? "Outcome: Stable (equal/above Stability)." : "Outcome: GLITCH (below Stability).");
 
-  if (glitch) {
+  if (!stable) {
     state.glitches += 1;
-    const penalty = 20;
+    const difference = state.stability - player;
+    const penalty = difference < 50 ? 10 : 20;
     state.stability = clamp(
       state.stability - penalty,
       tables.core_rules.stability_floor,
       tables.core_rules.stability_ceiling
     );
+    lines.push(`Difference: ${difference}.`);
     lines.push(`Result glitch penalty: Stability -${penalty}% -> ${state.stability}%.`);
     const glitchFlavor = tables.random_flavor_tables.big_book_of_glitches.entries[rollDie(20) - 1];
     lines.push(`Glitch prompt: ${glitchFlavor}`);
@@ -614,7 +640,7 @@ export function step(previousState, inputText, tables) {
     lines.push("Commands:");
     lines.push("- start | reset");
     lines.push("- archetype camouflage|strategist|runner (character creation)");
-    lines.push("- roll msk|sns|log|result|recharge");
+    lines.push("- roll msk|sns|log|commute|result|recharge");
     lines.push("- sip spend");
     lines.push("- mode auto|manual");
     lines.push("- manual <dice...>");
@@ -798,10 +824,27 @@ export function step(previousState, inputText, tables) {
 
     if (state.awaiting.type === "result_check") {
       const values = args.map(Number).filter((n) => Number.isFinite(n));
-      if (values.length !== 2 || values.some((n) => n < 1 || n > 100)) {
-        return { state, lines: ["Enter two d100 values: manual <player> <os>"], prompt: ">", choices: [] };
+      if (values.length !== 1 || values.some((n) => n < 1 || n > 100)) {
+        return { state, lines: ["Enter one d100 value: manual <value>"], prompt: ">", choices: [] };
       }
-      return resolveResultCheck(state, tables, values);
+      return resolveResultCheck(state, tables, [values[0]]);
+    }
+
+    if (state.awaiting.type === "commute_roll") {
+      const values = args.map(Number).filter((n) => Number.isFinite(n));
+      const expected = state.awaiting.expectedDice || 0;
+      if (values.length === 0 || values.some((n) => n < 1 || n > 6)) {
+        return { state, lines: ["Enter d6 values like: manual 4 2 6"], prompt: ">", choices: [] };
+      }
+      if (expected > 0 && values.length !== expected) {
+        return {
+          state,
+          lines: [`Expected ${expected} d6 values, got ${values.length}.`],
+          prompt: ">",
+          choices: []
+        };
+      }
+      return resolveCommuteRoll(state, tables, values);
     }
 
     if (state.awaiting.type === "recharge_roll") {
@@ -816,6 +859,24 @@ export function step(previousState, inputText, tables) {
   if (command === "roll") {
     const which = (args[0] || "").toLowerCase();
 
+    if (which === "commute") {
+      if (!state.awaiting || state.awaiting.type !== "commute_roll") {
+        return { state, lines: ["No commute roll is currently expected."], prompt: state.prompt || ">", choices: state.choices || [] };
+      }
+
+      if (state.manualDiceMode) {
+        const expected = state.awaiting.expectedDice || 0;
+        return {
+          state,
+          lines: [`Manual mode: enter ${expected} d6 values using 'manual ...'.`],
+          prompt: ">",
+          choices: []
+        };
+      }
+
+      return resolveCommuteRoll(state, tables, null);
+    }
+
     if (which === "result") {
       return resolveResultCheck(state, tables, null);
     }
@@ -825,7 +886,7 @@ export function step(previousState, inputText, tables) {
     }
 
     if (!["msk", "sns", "log"].includes(which)) {
-      return { state, lines: ["Use: roll msk | roll sns | roll log | roll result | roll recharge"], prompt: ">", choices: [] };
+      return { state, lines: ["Use: roll msk | roll sns | roll log | roll commute | roll result | roll recharge"], prompt: ">", choices: [] };
     }
 
     state.awaiting = { ...state.awaiting, pool: which };
