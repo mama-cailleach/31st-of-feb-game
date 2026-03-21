@@ -183,6 +183,17 @@ function nextObjective(state, tables, lines) {
       .join(", ");
     const stationPrompt = SEASON_PROMPT_PLACEHOLDERS[rollDie(6) - 1];
 
+    if (state.objectiveIndex === 0 && objective.station_id === "awakening") {
+      lines.push("Thursday the 31st");
+      lines.push("February 2026");
+      lines.push(`Candidate ${state.playerName || "Candidate"}, you have an interview today.`);
+      lines.push("Do not be afraid. Be perfect.");
+      lines.push("They only want the best version of you.");
+      lines.push("They want you to stay here.");
+      lines.push("Forever is a very short time when you never leave.");
+      lines.push("Good Luck :)");
+    }
+
     lines.push("");
     lines.push("----------------");
     lines.push("----------------");
@@ -201,10 +212,9 @@ function nextObjective(state, tables, lines) {
   }
 
   if (objective.special_check === "loop_receipt_summary") {
-    const receiptPrompts = tables.random_flavor_tables?.receipt_print_prompts?.entries;
-    if (Array.isArray(receiptPrompts) && receiptPrompts.length > 0) {
-      lines.push(`Prompt: ${receiptPrompts[rollDie(receiptPrompts.length) - 1]}`);
-    }
+    lines.push("LOG_ANALYSIS: COMPLETE");
+    lines.push("SYNCING_RECORDS...");
+    lines.push(`STATUS: CANDIDATE ${state.playerName || "[NAME]"} IS STILL WITHIN PARAMETERS.`);
 
     state.awaiting = { type: "receipt_print" };
     return {
@@ -311,7 +321,7 @@ function handleBatteryDepletion(state, tables, lines) {
   lines.push("BATTERY DEPLETED: 0%. Loop terminated.");
   const batteryZeroEntries = tables.random_flavor_tables?.battery_zero_events?.entries;
   if (Array.isArray(batteryZeroEntries) && batteryZeroEntries.length > 0) {
-    lines.push(`Battery Zero Flavor: ${batteryZeroEntries[rollDie(batteryZeroEntries.length) - 1]}`);
+    lines.push(`${batteryZeroEntries[rollDie(batteryZeroEntries.length) - 1]}`);
   }
 
   // Hard loop reset on battery depletion.
@@ -602,8 +612,24 @@ function resolveReceiptPrint(state, tables) {
   }
 
   state.awaiting = null;
-  lines.push(`Receipt: Loop ${state.loopCount} | Battery ${state.battery}% | Stability ${state.stability}% | Successes ${state.successes} | Glitches ${state.glitches}`);
+  const loopText = String(state.loopCount).padStart(2, "0");
+  const glitchText = String(state.glitches).padStart(2, "0");
+  lines.push("...");
+  lines.push("PRINTING_RECEIPT...");
+  lines.push("----------------");
+  lines.push(`LOOP: ${loopText} | BATTERY: ${state.battery}% | STABILITY: ${state.stability}% | SUCCESSES: ${state.successes} | GLITCHES: ${glitchText}`);
+  lines.push("----------------");
+  lines.push("[!] LOG_NOTE: A full loop has completed.");
+  lines.push(`[!] SIP +${tables.sip_rules.gain_per_completed_loop} ADDED TO CONSCIOUSNESS BUFFER.`);
+  lines.push("----------------");
+  lines.push("REBOOTING_SYSTEM...");
   state.objectiveIndex += 1;
+
+  if (state.objectiveIndex >= state.objectiveOrder.length) {
+    state.objectiveIndex = 0;
+    state.loopCount += 1;
+    state.sip += tables.sip_rules.gain_per_completed_loop;
+  }
 
   if (state.stability <= 0) {
     state.gameOver = true;

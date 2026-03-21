@@ -1,7 +1,7 @@
 import { newGame, step } from "./engine.js";
 
 const LOG_LIMIT = 500;
-const LINE_DELAY_MS = 1000;
+const LINE_DELAY_MS = 750; // line delay
 
 const el = {
   log: document.getElementById("log"),

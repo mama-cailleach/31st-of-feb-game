@@ -398,36 +398,24 @@
       "die": "d6",
       "usage": "commute_back_success_flavor",
       "entries": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6"
+        "You made it out unscathed, but the world feels a little grayer.",
+        "You find a small moment of distraction that makes you forget why you endure this.",
+        "You treat yourself to a small comfort and it feels like a luxury.",
+        "You feel a sense of accomplishment despite the challenges and the lack of energy.",
+        "You arrive home and take a moment to appreciate the simple things and pretty patterns.",
+        "You reflect on the day's events to process and feel a bit more grounded."
       ]
     },
     "recharge_prompts": {
       "die": "d6",
       "usage": "recharge_prompt_flavor",
       "entries": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6"
-      ]
-    },
-    "receipt_print_prompts": {
-      "die": "d6",
-      "usage": "receipt_print_prompt_flavor",
-      "entries": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6"
+        "You feel depleted but grateful for the chance to rest, finally.",
+        "You are too wired to rest, but you try anyway and it feels like a waste of time.",
+        "You have a brief moment of peace, but it slips away as you worry about the next loop.",
+        "You manage to find some time to rest and it feels restorative, but you know it won't last.",
+        "(silence)",
+        "You take what you can get and it feels like a small victory, even if it's not enough."
       ]
     },
     "battery_zero_events": {
