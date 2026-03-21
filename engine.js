@@ -147,7 +147,7 @@ function selectArchetype(state, tables, archetype) {
   lines.push(`Welcome, ${state.playerName}. Your pools are set. Prepare for the loop.`);
 
   state.characterCreation.pending = false;
-  lines.push("Character creation complete.");
+  lines.push("Candidate upload complete.");
   return {
     state,
     lines,
@@ -184,6 +184,7 @@ function nextObjective(state, tables, lines) {
     const stationPrompt = SEASON_PROMPT_PLACEHOLDERS[rollDie(6) - 1];
 
     lines.push("");
+    lines.push("----------------");
     lines.push("----------------");
     lines.push(`Station: ${station?.label || objective.station_id}`);
     lines.push(`Objectives: ${objectiveNames || "-"}`);
@@ -672,6 +673,7 @@ export function step(previousState, inputText, tables) {
   if (command === "help") {
     lines.push("Commands:");
     lines.push("- start | reset");
+    lines.push("- quit");
     lines.push("- archetype camouflage|strategist|runner (character creation)");
     lines.push("- roll msk|sns|log|commute|result|recharge");
     lines.push("- print receipt");
@@ -715,9 +717,11 @@ export function step(previousState, inputText, tables) {
     const introLines = [
       "----------------",
       "31st of February terminal initialized.",
-      "Hello, Candidate. Welcome to the Loop. I'm your terminal assistant, here to guide you through the process.",
+      "Hello, Candidate. Welcome to the Loop.",
+      "I'm your terminal assistant, here to guide you through the process.",
       "...",
-      "Some call me Companion - a name I find... acceptable. I'll be here to provide information, tracking, and the occasional remark.",
+      "Some call me Companion - a name I find... acceptable.",
+      "I'll be here to provide information, tracking, and your prompts.",
       "Let's begin, if you need any help along the way, just type 'help'.",
       "----------------"
     ];
@@ -751,6 +755,23 @@ export function step(previousState, inputText, tables) {
       prompt: ">",
       choices: [],
       exportText: snapshot
+    };
+  }
+
+  if (command === "quit") {
+    state.gameOver = true;
+    state.awaiting = null;
+    return {
+      state,
+      lines: [
+        "You quit!",
+        "You are the perfect Candidate!",
+        "You will be living the 31st of february forever!",
+        "Thank You!",
+        "GAME OVER"
+      ],
+      prompt: "(game over)",
+      choices: [{ label: "Reset", command: "reset" }]
     };
   }
 
