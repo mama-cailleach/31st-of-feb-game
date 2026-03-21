@@ -181,13 +181,13 @@ function nextObjective(state, tables, lines) {
       .map((id) => tables.objective_catalog[id]?.name)
       .filter(Boolean)
       .join(", ");
-    const tationPrompt = SEASON_PROMPT_PLACEHOLDERS[rollDie(6) - 1];
+    const stationPrompt = SEASON_PROMPT_PLACEHOLDERS[rollDie(6) - 1];
 
     lines.push("");
     lines.push("----------------");
     lines.push(`Station: ${station?.label || objective.station_id}`);
     lines.push(`Objectives: ${objectiveNames || "-"}`);
-    lines.push(`Prompt: ${tationPrompt}`);
+    lines.push(`Prompt: ${stationPrompt}`);
     lines.push("----------------");
   }
 

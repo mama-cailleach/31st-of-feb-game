@@ -91,7 +91,7 @@ function validateTablesSchema(data) {
   }
 
   const objectiveCatalog = data.objective_catalog || {};
-  const tationIds = new Set((data.stations || []).map((station) => station.id));
+  const stationIds = new Set((data.stations || []).map((station) => station.id));
   const objectiveIds = new Set();
 
   (data.stations || []).forEach((station) => {
@@ -118,7 +118,7 @@ function validateTablesSchema(data) {
       return;
     }
 
-    if (!objective.station_id || !tationIds.has(objective.station_id)) {
+    if (!objective.station_id || !stationIds.has(objective.station_id)) {
       errors.push(`Objective ${objectiveId} has invalid station_id.`);
     }
 
