@@ -49,6 +49,8 @@ function pickPrompt(objective) {
   return objective.prompts[Math.floor(Math.random() * objective.prompts.length)];
 }
 
+const SEASON_PROMPT_PLACEHOLDERS = ["1", "2", "3", "4", "5", "6"];
+
 function buildCreationChoices(lines) {
   if (Array.isArray(lines)) {
     lines.push("Social Camouflage (MSK 3, SNS 1, LOG 2)");
@@ -168,11 +170,25 @@ function nextObjective(state, tables, lines) {
   const objectiveId = state.objectiveOrder[state.objectiveIndex];
   const objective = tables.objective_catalog[objectiveId];
   state.currentObjectiveId = objectiveId;
+  const season = tables.seasons.find((entry) => entry.id === objective.season_id);
 
   // Detect season change and reset pool usage tracker
   if (state.currentSeasonId !== objective.season_id) {
     state.currentSeasonId = objective.season_id;
     state.rolledPoolsThisSeason = [];
+
+    const objectiveNames = (season?.objectives || [])
+      .map((id) => tables.objective_catalog[id]?.name)
+      .filter(Boolean)
+      .join(", ");
+    const seasonPrompt = SEASON_PROMPT_PLACEHOLDERS[rollDie(6) - 1];
+
+    lines.push("");
+    lines.push("----------------");
+    lines.push(`Season: ${season?.label || objective.season_id}`);
+    lines.push(`Objectives: ${objectiveNames || "-"}`);
+    lines.push(`Prompt: ${seasonPrompt}`);
+    lines.push("----------------");
   }
 
   lines.push("");
@@ -194,6 +210,8 @@ function nextObjective(state, tables, lines) {
       lines.push("But there's a lingering doubt in the back of your head. Was it really the loop breaking? Or did you just... win?");
       lines.push("Either way you just hope the calendar tomorrow says the 1st of March.");
       lines.push("----------------");
+      lines.push("(game over)");
+      lines.push("Use 'reset' to start a new loop.");
       return { prompt: "(game over)", choices: [] };
     }
 

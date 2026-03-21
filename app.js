@@ -12,10 +12,14 @@ const el = {
   stability: document.getElementById("stat-stability"),
   sip: document.getElementById("stat-sip"),
   objective: document.getElementById("stat-objective"),
+  osDie: document.getElementById("tracker-os-die"),
   mode: document.getElementById("stat-mode"),
   trackerSeason: document.getElementById("tracker-season"),
   trackerLoop: document.getElementById("tracker-loop"),
-  trackerCandidate: document.getElementById("tracker-candidate")
+  trackerCandidate: document.getElementById("tracker-candidate"),
+  trackerMsk: document.getElementById("tracker-msk"),
+  trackerSns: document.getElementById("tracker-sns"),
+  trackerLog: document.getElementById("tracker-log")
 };
 
 let tables;
@@ -199,6 +203,10 @@ function renderStatus() {
   el.stability.textContent = `${state.stability}%`;
   el.sip.textContent = String(state.sip);
   el.objective.textContent = state.currentObjectiveId || "-";
+  const osBand = tables?.os_table?.find(
+    (band) => state.stability >= band.min_stability && state.stability <= band.max_stability
+  );
+  el.osDie.textContent = osBand?.die || "-";
   el.mode.textContent = state.manualDiceMode ? "MANUAL" : "AUTO";
   renderTracker();
 }
@@ -210,6 +218,9 @@ function renderTracker() {
 
   if (state.characterCreation?.pending) {
     el.trackerSeason.textContent = "Character Creation";
+    el.trackerMsk.textContent = state.pools.msk ?? "-";
+    el.trackerSns.textContent = state.pools.sns ?? "-";
+    el.trackerLog.textContent = state.pools.log ?? "-";
     if (state.characterCreation.stage === "name") {
       el.trackerLoop.textContent = "1/2";
       el.trackerCandidate.textContent = "Enter your name";
@@ -227,6 +238,9 @@ function renderTracker() {
   el.trackerSeason.textContent = season ? season.label : "-";
   el.trackerLoop.textContent = `${state.loopCount}`;
   el.trackerCandidate.textContent = state.playerName || "-";
+  el.trackerMsk.textContent = state.pools.msk ?? "-";
+  el.trackerSns.textContent = state.pools.sns ?? "-";
+  el.trackerLog.textContent = state.pools.log ?? "-";
 }
 
 function downloadTextFile(fileName, text) {
