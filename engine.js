@@ -193,7 +193,7 @@ function nextObjective(state, tables, lines) {
 
     if (state.objectiveIndex === 0 && objective.station_id === "awakening") {
       lines.push("----------------");
-      lines.push("Tuesdaythe 31st");
+      lines.push("Tuesday the 31st");
       lines.push("February 2026");
       lines.push(`Candidate ${state.playerName || "Candidate"}, you have an interview today.`);
       lines.push("Do not be afraid. Be perfect.");
