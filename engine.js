@@ -735,6 +735,7 @@ export function step(previousState, inputText, tables) {
     lines.push("- sip spend");
     lines.push("- mode auto|manual");
     lines.push("- manual <dice...>");
+    lines.push("- mute | unmute | sound on|off");
     lines.push("- export");
     lines.push("- status");
     return { state, lines, prompt: ">", choices: [] };

@@ -2,6 +2,8 @@ import { newGame, step } from "./engine.js";
 
 const LOG_LIMIT = 500;
 const LINE_DELAY_MS = 750; // line delay
+const MUSIC_VOLUME = 0.24;
+const BLIP_VOLUME = 0.2;
 
 const el = {
   log: document.getElementById("log"),
@@ -19,7 +21,8 @@ const el = {
   trackerCandidate: document.getElementById("tracker-candidate"),
   trackerMsk: document.getElementById("tracker-msk"),
   trackerSns: document.getElementById("tracker-sns"),
-  trackerLog: document.getElementById("tracker-log")
+  trackerLog: document.getElementById("tracker-log"),
+  audioToggle: document.getElementById("audio-toggle")
 };
 
 let tables;
@@ -27,6 +30,144 @@ let state;
 let history = [];
 let historyIndex = -1;
 let commandQueue = Promise.resolve();
+
+const audio = {
+  userActivated: false,
+  muted: false,
+  music: null,
+  blips: [],
+  blipCursor: 0
+};
+
+function shuffle(items) {
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
+function createAudio(path, volume) {
+  const track = new Audio(path);
+  track.preload = "auto";
+  track.volume = volume;
+  return track;
+}
+
+function updateAudioToggleUi() {
+  if (!el.audioToggle) {
+    return;
+  }
+
+  el.audioToggle.textContent = audio.muted ? "Sound: OFF" : "Sound: ON";
+  el.audioToggle.setAttribute("aria-pressed", String(audio.muted));
+  el.audioToggle.classList.toggle("is-muted", audio.muted);
+}
+
+function stopBackgroundMusic() {
+  if (!audio.music) {
+    return;
+  }
+  audio.music.pause();
+  audio.music.currentTime = 0;
+}
+
+function syncBackgroundMusic() {
+  if (!audio.music || !audio.userActivated) {
+    return;
+  }
+
+  const shouldPlay = state?.started && !state?.gameOver && !audio.muted;
+  if (shouldPlay) {
+    audio.music.play().catch(() => {
+      // Ignore browser autoplay and decode errors to keep gameplay responsive.
+    });
+    return;
+  }
+
+  audio.music.pause();
+  audio.music.currentTime = 0;
+}
+
+function setMuted(nextMuted) {
+  audio.muted = nextMuted;
+  updateAudioToggleUi();
+
+  if (audio.muted) {
+    stopBackgroundMusic();
+  } else {
+    syncBackgroundMusic();
+  }
+}
+
+function nextBlip() {
+  if (!audio.blips.length) {
+    return null;
+  }
+
+  if (audio.blipCursor >= audio.blips.length) {
+    audio.blipCursor = 0;
+    shuffle(audio.blips);
+  }
+
+  const blip = audio.blips[audio.blipCursor];
+  audio.blipCursor += 1;
+  return blip;
+}
+
+function playRandomBlip() {
+  if (!audio.userActivated || audio.muted) {
+    return;
+  }
+
+  const blip = nextBlip();
+  if (!blip) {
+    return;
+  }
+
+  blip.currentTime = 0;
+  blip.play().catch(() => {
+    // Ignore transient playback errors for rapid command bursts.
+  });
+}
+
+function initAudio() {
+  audio.music = createAudio("./sounds/bg_music.ogg", MUSIC_VOLUME);
+  audio.music.loop = true;
+
+  audio.blips = [
+    "./sounds/blip1.ogg",
+    "./sounds/blip2.ogg",
+    "./sounds/blip3.ogg",
+    "./sounds/blip4.ogg",
+    "./sounds/blip5.ogg",
+    "./sounds/blip6.ogg"
+  ].map((path) => createAudio(path, BLIP_VOLUME));
+
+  shuffle(audio.blips);
+  updateAudioToggleUi();
+}
+
+function runAudioCommand(raw) {
+  const [command, arg] = raw.toLowerCase().split(/\s+/);
+
+  if (command === "mute") {
+    setMuted(true);
+    return ["Audio muted."];
+  }
+
+  if (command === "unmute") {
+    setMuted(false);
+    return ["Audio unmuted."];
+  }
+
+  if (command === "sound" && (arg === "on" || arg === "off")) {
+    setMuted(arg === "off");
+    return [arg === "on" ? "Audio unmuted." : "Audio muted."];
+  }
+
+  return null;
+}
 
 async function loadTables() {
   // Bypass browser cache so table edits are reflected immediately during iteration.
@@ -165,6 +306,9 @@ function sleep(ms) {
 
 function appendLine(line, kind = "out") {
   el.log.appendChild(lineElement(line, kind));
+  if (line.trim().length > 0) {
+    playRandomBlip();
+  }
 
   while (el.log.childElementCount > LOG_LIMIT) {
     el.log.removeChild(el.log.firstChild);
@@ -262,11 +406,21 @@ async function runCommand(input, pushHistory = true) {
     return;
   }
 
+  audio.userActivated = true;
+
   await renderLines([`> ${raw}`], "in");
   state.transcript.push(`> ${raw}`);
   if (pushHistory) {
     history.push(raw);
     historyIndex = history.length;
+  }
+
+  const audioCommandLines = runAudioCommand(raw);
+  if (audioCommandLines) {
+    await renderLines(audioCommandLines);
+    audioCommandLines.forEach((line) => state.transcript.push(line));
+    syncBackgroundMusic();
+    return;
   }
 
   const result = step(state, raw, tables);
@@ -285,7 +439,19 @@ async function runCommand(input, pushHistory = true) {
     await renderLines(["Transcript downloaded."]);
   }
 
+  syncBackgroundMusic();
   renderStatus();
+}
+
+function bindAudioToggle() {
+  if (!el.audioToggle) {
+    return;
+  }
+
+  el.audioToggle.addEventListener("click", () => {
+    audio.userActivated = true;
+    setMuted(!audio.muted);
+  });
 }
 
 function bindInput() {
@@ -318,6 +484,8 @@ function bindInput() {
 }
 
 async function boot() {
+  initAudio();
+
   try {
     tables = await loadTables();
   } catch (error) {
@@ -348,6 +516,7 @@ async function boot() {
   el.prompt.textContent = ">";
 
   renderStatus();
+  bindAudioToggle();
   bindInput();
   el.input.focus();
 }
