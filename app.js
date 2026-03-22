@@ -34,6 +34,8 @@ let commandQueue = Promise.resolve();
 const audio = {
   userActivated: false,
   muted: false,
+  musicEnabled: true,
+  sfxEnabled: true,
   music: null,
   blips: [],
   blipCursor: 0
@@ -77,7 +79,7 @@ function syncBackgroundMusic() {
     return;
   }
 
-  const shouldPlay = state?.started && !state?.gameOver && !audio.muted;
+  const shouldPlay = state?.started && !state?.gameOver && !audio.muted && audio.musicEnabled;
   if (shouldPlay) {
     audio.music.play().catch(() => {
       // Ignore browser autoplay and decode errors to keep gameplay responsive.
@@ -116,7 +118,7 @@ function nextBlip() {
 }
 
 function playRandomBlip() {
-  if (!audio.userActivated || audio.muted) {
+  if (!audio.userActivated || audio.muted || !audio.sfxEnabled) {
     return;
   }
 
@@ -151,19 +153,20 @@ function initAudio() {
 function runAudioCommand(raw) {
   const [command, arg] = raw.toLowerCase().split(/\s+/);
 
-  if (command === "mute") {
-    setMuted(true);
-    return ["Audio muted."];
-  }
-
-  if (command === "unmute") {
-    setMuted(false);
-    return ["Audio unmuted."];
-  }
-
   if (command === "sound" && (arg === "on" || arg === "off")) {
     setMuted(arg === "off");
-    return [arg === "on" ? "Audio unmuted." : "Audio muted."];
+    return [arg === "on" ? "Sound is ON." : "Sound is OFF."];
+  }
+
+  if (command === "music" && (arg === "on" || arg === "off")) {
+    audio.musicEnabled = arg === "on";
+    syncBackgroundMusic();
+    return [audio.musicEnabled ? "Music is ON." : "Music is OFF."];
+  }
+
+  if (command === "sfx" && (arg === "on" || arg === "off")) {
+    audio.sfxEnabled = arg === "on";
+    return [audio.sfxEnabled ? "SFX is ON." : "SFX is OFF."];
   }
 
   return null;
