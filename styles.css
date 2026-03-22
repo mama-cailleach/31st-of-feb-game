@@ -34,7 +34,7 @@ body {
   height: min(92vh, 860px);
   display: grid;
   grid-template-rows: auto auto 1fr auto auto;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
